@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				buttonMode="true" mouseChildren="false"
+				autoDrawBackground="false" minHeight="32">
+	
+	<fx:Script>
+	<![CDATA[
+		[Bindable] private var _color:uint = 0xD9D9D9;
+		[Bindable] private var _label:String;
+		
+		override public function set data(value:Object):void
+		{
+			super.data = value;
+			
+			_label = data ? data.name : "";
+			_color = data ? data.color : 0xD9D9D9;
+		}
+		
+		override protected function getCurrentRendererState():String
+		{
+			if (selected && hovered && hasState("selectedAndHovered"))
+				return "selectedAndHovered";
+			
+			return super.getCurrentRendererState();
+		}
+	]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="selectedAndHovered" stateGroups="selectedGroup" />
+		<s:State name="selected" stateGroups="selectedGroup" />
+	</s:states>
+	
+	<s:Rect top="0" bottom="0" left="0" right="0">
+		<s:fill>
+			<s:SolidColor color="0x999999" color.selectedGroup="0x3D3D3D" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect top="1" bottom="1" left="1" right="1">
+		<s:fill>
+			<s:LinearGradient rotation="-90">
+				<s:GradientEntry color="0xE6E6E6" color.selected="0x898989" color.selectedAndHovered="0xB2B2B2" ratio="0" />
+				<s:GradientEntry color="0xFFFFFF" color.selected="0x777777" color.selectedAndHovered="0x8A8A8A" ratio="1" />
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters.selectedGroup>
+			<s:GlowFilter inner="true" blurX="5" blurY="5" alpha=".3" quality="2" color="0x000000" />
+		</s:filters.selectedGroup>
+	</s:Rect>
+	
+	<s:Group verticalCenter="0" left="10">
+		<s:Ellipse height="14" width="14">
+			<s:fill>
+				<s:SolidColor color="0xD9D9D9" color.selectedGroup="{_color}" />
+			</s:fill>
+		</s:Ellipse>
+		<s:Group alpha="0.25">
+			<s:Path data="M 7 1 C 10 1 13 4 13 7 C 13 10 10 13 7 13 C 4 13 1 10 1 7 C 1 4 4 1 7 1 M 7 0 C 3 0 0 3 0 7 C 0 11 3 14 7 14 C 11 14 14 11 14 7 C 14 3 11 0 7 0 L 7 0 Z" winding="nonZero">
+				<s:fill>
+					<s:SolidColor />
+				</s:fill>
+			</s:Path>
+		</s:Group>
+	</s:Group>
+	
+	<s:Label id="labelDisplay" text="{_label}"
+			 color="0x9E9E9E" color.selectedGroup="0xFFFFFF"
+			 fontFamily="Calibri" fontSize="12" maxDisplayedLines="1"
+			 verticalCenter="0" left="39" maxWidth="95" lineBreak="toFit"
+			 filters.selectedGroup="{null}"
+			 updateComplete="toolTip = labelDisplay.isTruncated ? _label : null"
+			 >
+		<s:filters>
+			<s:DropShadowFilter color="0xFFFFFF" distance="2" blurX="0" blurY="0" angle="90" />
+		</s:filters>
+	</s:Label>
+	
+</s:ItemRenderer>

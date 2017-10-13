@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 implements="fr.kapit.pictogram.renderers.IPictogramUnit"
+		 >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.pictogram.constants.UnitFillPolicy;
+
+		[Bindable] private var _percentage:Number = 0;
+
+		[Bindable] private var _width:Number;
+		[Bindable] private var _height:Number;
+
+		[Bindable] private var _right:Number;
+		[Bindable] private var _left:Number;
+		[Bindable] private var _top:Number;
+		[Bindable] private var _bottom:Number;
+
+		public function set percentage(value:Number):void
+		{
+			_percentage = value;
+			
+			invalidateDisplayList();
+		}
+		
+		public function set fillDirection(value:String):void
+		{
+			_top = _bottom = _right = _left = NaN;
+			switch (value)
+			{
+				case UnitFillPolicy.FILL_LTR : {
+					_left = 0;
+					_width = Math.round(_percentage * 100);
+					_height = 100;
+					break;
+				}
+				case UnitFillPolicy.FILL_RTL : {
+					_right = 0;
+					_width = Math.round(_percentage * 100);
+					_height = 100;
+					break;
+				}
+				case UnitFillPolicy.FILL_BTT : {
+					_bottom = 0;
+					_width = 100;
+					_height = Math.round(_percentage * 100);
+					break;
+				}
+				case UnitFillPolicy.FILL_TTB : {
+					_top = 0;
+					_width = 100;
+					_height = Math.round(_percentage * 100);
+					break;
+				}
+			}
+		}
+		
+		/**
+		 * @private
+		 */
+		protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+		{
+			currentState = _percentage == 1 ? "normal" : (_percentage == 0 ? "empty" : "partially");
+			
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+		}
+	]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="empty" />
+		<s:State name="partially" />
+	</s:states>
+	
+	<s:Image excludeFrom="normal"
+			 source="@Embed('/fr/kapit/lab/demo/pictogram/assets/images/empty_cloud.png')"
+			 width="100%" height="100%" verticalCenter="0" horizontalCenter="0"
+			 />
+	<s:Group id="cloudMask" excludeFrom="empty"
+			 width="100%" height="100%"
+			 percentWidth.partially="{_width}" percentHeight.partially="{_height}"
+			 right="{_right}" left="{_left}" top="{_top}" bottom="{_bottom}">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor />
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	<s:Image excludeFrom="empty" mask="{cloudMask}"
+			 source="@Embed('/fr/kapit/lab/demo/pictogram/assets/images/cloud.png')"
+			 width="100%" height="100%" verticalCenter="0" horizontalCenter="0"
+			 />
+	
+</s:Group>

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group implements="fr.kapit.diagrammer.utils.components.IContextMenu"
+		 xmlns:components="fr.kapit.diagrammer.utils.components.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 width="170" height="90"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.visualizer.Visualizer;
+		import fr.kapit.visualizer.actions.artefacts.ActionAssets;
+
+		import mx.events.FlexEvent;
+		import mx.events.ListEvent;
+
+		protected var _visualizer:Visualizer;
+
+		public function get visualizer():Visualizer
+		{
+			return _visualizer;
+		}
+
+		public function set visualizer(value:Visualizer):void
+		{
+			_visualizer = value;
+		}
+
+		protected var _dataProvider:Object
+
+		public function get dataProvider():Object
+		{
+			return _dataProvider;
+		}
+
+		public function set dataProvider(value:Object):void
+		{
+			if (value.length==3)
+			{
+				menuBasic.dataProvider=value[0];
+				menuAdvancedShapes.dataProvider=value[1];
+				menuPeople.dataProvider=value[2];
+			}
+
+
+			_dataProvider = value;
+		}
+
+
+		protected var _selectedItem:Object;
+
+		public function get selectedItem():Object
+		{
+			if (menuBasic.selectedItem)
+			{
+				return menuBasic.selectedItem;
+			}
+			else if (menuAdvancedShapes.selectedItem)
+			{
+				return menuAdvancedShapes.selectedItem;
+			}
+			else if (menuPeople.selectedItem)
+			{
+				return menuPeople.selectedItem;
+			}
+			else
+			{
+				return _selectedItem;
+			}
+
+		}
+
+
+		protected function menu1_changeHandler(event:ListEvent):void
+		{
+			dispatchEvent(new Event('change'));
+		}
+
+		protected function menu2_changeHandler(event:ListEvent):void
+		{
+			dispatchEvent(new Event('change'));
+		}
+
+		protected function menu3_changeHandler(event:ListEvent):void
+		{
+			dispatchEvent(new Event('change'));
+		}
+
+		protected var cursorID:int;
+
+		protected function handleRollOver(event:MouseEvent):void
+		{
+			cursorID=visualizer.cursorManager.setCursor(ActionAssets.handClick,2);
+		}
+
+		protected function handleRollOut(event:MouseEvent):void
+		{
+			visualizer.cursorManager.removeCursor(cursorID);
+		}
+
+		protected function group1_creationCompleteHandler(event:FlexEvent):void
+		{
+			addEventListener(MouseEvent.ROLL_OVER,handleRollOver);
+			addEventListener(MouseEvent.ROLL_OUT,handleRollOut);
+		}
+	]]>
+	</fx:Script>
+
+	<s:Rect left="0" right="0" top="0" bottom="0"
+			radiusX="3" radiusY="3"
+			>
+		<s:fill>
+			<s:SolidColor color="0xFFFFFF" />
+		</s:fill>
+		<s:filters>
+			<mx:GlowFilter color="0x0C71B3" blurX="10" blurY="10" alpha="0.7">
+
+			</mx:GlowFilter>
+		</s:filters>
+		<s:stroke>
+			<s:SolidColorStroke color="0xB3B3B3" />
+		</s:stroke>
+	</s:Rect>
+	<s:VGroup width="100%" height="100%">
+		<mx:TileList id="menuBasic"
+					 width="100%"
+					 iconField="icon" labelField="type"
+					 columnCount="10" columnWidth="24"
+					 dragEnabled="true" dragMoveEnabled="false" dropEnabled="false" rowCount="1"
+					 rowHeight="24"
+					 change="menu1_changeHandler(event)"
+					 >
+		</mx:TileList>
+
+		<mx:TileList id="menuAdvancedShapes"
+					 width="100%"
+					 iconField="icon" labelField="type"
+					 columnCount="2" columnWidth="24" 
+					 dragEnabled="true" rowCount="1"
+					 rowHeight="24"
+					 change="menu2_changeHandler(event)"
+					 >
+
+		</mx:TileList>
+
+		<mx:TileList id="menuPeople"
+					 width="100%"
+					 iconField="icon" labelField="type"
+					 columnCount="6" columnWidth="24" 
+					 dragEnabled="true" dragMoveEnabled="false" dropEnabled="false" rowCount="1"
+					 rowHeight="34"
+					 change="menu3_changeHandler(event)"
+					 >
+		</mx:TileList>
+	</s:VGroup>
+</s:Group>

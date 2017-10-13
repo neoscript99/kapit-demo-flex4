@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="fr.kapit.components.treemap.renderers.ITrackArea"
+		 enterFrame="group1_creationCompleteHandler(event)"
+		 >
+
+	<fx:Script>
+		<![CDATA[
+			import fr.kapit.components.treemap.TreeMapLegend;
+			import fr.kapit.components.treemap.treemap_internal;
+			
+			use namespace treemap_internal;
+			
+			private var valuesChanged:Boolean;
+			
+			[Bindable]
+			private var _widthValue:Number = 0;
+			
+			[Bindable]
+			private var _leftValue:Number=0;
+			public function set leftValue(value:Number):void
+			{
+				_leftValue = value;
+				valuesChanged = true;
+				invalidateProperties();
+			}
+			
+			[Bindable]
+			private var _rightValue:Number = 0;
+			public function set rightValue(value:Number):void
+			{
+				_rightValue = value;
+				valuesChanged = true;
+				invalidateProperties();
+			}
+			
+			protected override function commitProperties():void
+			{
+				super.commitProperties();
+				if(valuesChanged)
+					_widthValue = Math.max(0, _rightValue - _leftValue);
+			}
+			
+			protected function group1_creationCompleteHandler(event:Event):void
+			{
+				if (!owner)
+					return ;
+			
+				var a:Array = (owner as fr.kapit.components.treemap.TreeMapLegend).treeMap.treemap_internal::colorValues as Array;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:Rect left="0" right="0" top="0" bottom="0" radiusX="4" radiusY="4">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0xCCCCCC" ratio="0.0" />
+				<s:GradientEntry color="0xFFFFFF" ratio="1.0" />
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:GlowFilter blurX="2" blurY="2" color="0x000000" alpha="0.30" inner="true" />
+		</s:filters>
+	</s:Rect>
+	<!--s:Rect x="{_leftValue}" width="{_widthValue}" height="100%">
+		<s:fill>
+			<s:LinearGradient rotation="5">
+				<s:GradientEntry color="0x000000" ratio="0.0" />
+				<s:GradientEntry color="0x990001" ratio="1.0" />
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect-->
+	<s:Group x="{_leftValue}" width="{_widthValue}" height="100%">
+		<s:Rect top="0" bottom="0" left="0" right="0">
+			<s:fill>
+				<s:LinearGradient>
+					<s:GradientEntry color="0x280001" ratio="0"/>
+					<s:GradientEntry color="0x990001" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect blendMode="overlay" top="0" bottom="0" left="0" right="0">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xFFFFFF" ratio="0"/>
+					<s:GradientEntry color="0x000000" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+</s:Group>

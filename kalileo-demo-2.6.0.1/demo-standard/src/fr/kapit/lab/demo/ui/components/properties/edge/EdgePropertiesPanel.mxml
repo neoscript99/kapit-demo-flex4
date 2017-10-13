@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel implements="fr.kapit.lab.demo.ui.components.IConfigPanel"
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:component="fr.kapit.lab.demo.panel.component.*"
+	xmlns:forms="fr.kapit.lab.demo.forms.*"
+	width="100%" xmlns:components="fr.kapit.lab.demo.common.components.*"
+	title="Selection Properties: Link" 
+>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.visualizer.styles.LinkStyle;
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:ArrayCollection id="arrowSourceTypes">
+			<fx:Object label="none" icon="{EmbeddedAssets.IMG_MENUBAR_LINK_STRAIGHT}" value="{LinkStyle.LINK_ARROW_NONE_TYPE}" hint="LinkStyle.LINK_ARROW_NONE_TYPE" />
+			<fx:Object label="arrow" icon="{EmbeddedAssets.IMG_MENUBAR_LINK_SOURCE_ARROW}" value="{LinkStyle.LINK_ARROW_ARROW_TYPE}" hint="LinkStyle.LINK_ARROW_ARROW_TYPE" />
+			<fx:Object label="circle" icon="{EmbeddedAssets.IMG_MENUBAR_LINK_SOURCE_CIRCLE}" value="{LinkStyle.LINK_ARROW_CIRCLE_TYPE}" hint="LinkStyle.LINK_ARROW_CIRCLE_TYPE" />
+<!--
+			<fx:Object label="diamond" icon="" value="{LinkStyle.LINK_ARROW_DIAMOND_TYPE}" hint="LinkStyle.LINK_ARROW_DIAMOND_TYPE" />
+			<fx:Object label="rectangle" icon="" value="{LinkStyle.LINK_ARROW_RECTANGLE_TYPE}" hint="LinkStyle.LINK_ARROW_RECTANGLE_TYPE" />
+-->
+		</s:ArrayCollection>
+
+		<s:ArrayCollection id="arrowTargetTypes">
+			<fx:Object label="none" icon="{EmbeddedAssets.IMG_MENUBAR_LINK_STRAIGHT}" value="{LinkStyle.LINK_ARROW_NONE_TYPE}" hint="LinkStyle.LINK_ARROW_NONE_TYPE" />
+			<fx:Object label="arrow" icon="{EmbeddedAssets.IMG_MENUBAR_LINK_TARGET_ARROW}" value="{LinkStyle.LINK_ARROW_ARROW_TYPE}" hint="LinkStyle.LINK_ARROW_ARROW_TYPE" />
+			<fx:Object label="circle" icon="{EmbeddedAssets.IMG_MENUBAR_LINK_TARGET_CIRCLE}" value="{LinkStyle.LINK_ARROW_CIRCLE_TYPE}" hint="LinkStyle.LINK_ARROW_CIRCLE_TYPE" />
+<!--
+			<fx:Object label="diamond" icon="" value="{LinkStyle.LINK_ARROW_DIAMOND_TYPE}" hint="LinkStyle.LINK_ARROW_DIAMOND_TYPE" />
+			<fx:Object label="rectangle" icon="" value="{LinkStyle.LINK_ARROW_RECTANGLE_TYPE}" hint="LinkStyle.LINK_ARROW_RECTANGLE_TYPE" />
+-->
+		</s:ArrayCollection>
+
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.model.NormalizedGenericLinkModel;
+		import fr.kapit.lab.demo.model.NormalizedDefaultItemRendererModel;
+		import fr.kapit.lab.demo.util.NormalizedValue;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.models.IGenericLinkModel;
+		import fr.kapit.lab.demo.models.constants.GenericLinkConstants;
+		import fr.kapit.lab.demo.ui.components.IConfigPanel;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+
+		[Bindable] public var lineColor:uint = GenericLinkConstants.LINE_COLOR;
+		[Bindable] public var thickness:uint = GenericLinkConstants.THICKNESS;
+		[Bindable] public var arrowSourceType:String = GenericLinkConstants.ARROW_SOURCE_TYPE;
+		[Bindable] public var arrowTargetType:String = GenericLinkConstants.ARROW_TARGET_TYPE;
+
+		[Bindable] public var useDashedRendering:Boolean = (GenericLinkConstants.RENDERING_POLICY == LinkStyle.LINK_RENDERING_DASH);
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			var normalizedModel:NormalizedGenericLinkModel;
+			normalizedModel = getNormalizedModel();
+
+			if (!normalizedModel)
+				return;
+
+			var normalized:NormalizedValue;
+
+			normalized = normalizedModel.normalizedThickness;
+			if (normalized.isDefined)
+			{
+				thickness = normalized.value;
+				thicknessSelector.isUnknownValue = false;
+				thicknessSelector.value = thickness;
+			}
+			else
+			{
+				thickness = GenericLinkConstants.THICKNESS;
+				thicknessSelector.isUnknownValue = true;
+				thicknessSelector.value = thickness;
+			}
+
+			normalized = normalizedModel.normalizedLineColor;
+			if (normalized.isDefined)
+			{
+				lineColor = normalized.value;
+				lineColorSelector.isUnknownColor = false;
+				lineColorSelector.value = lineColor;
+			}
+			else
+			{
+				lineColor = GenericLinkConstants.LINE_COLOR;
+				lineColorSelector.isUnknownColor = true;
+				lineColorSelector.value = lineColor;
+			}
+
+			normalized = normalizedModel.normalizedRenderingPolicy;
+			if (normalized.isDefined)
+			{
+				useDashedRendering = (normalized.value == LinkStyle.LINK_RENDERING_DASH);
+				useDashRenderingSelector.isUnknownValue = false;
+				useDashRenderingSelector.selected = useDashedRendering;
+			}
+			else
+			{
+				useDashedRendering = (GenericLinkConstants.RENDERING_POLICY == LinkStyle.LINK_RENDERING_DASH);
+				useDashRenderingSelector.isUnknownValue = true;
+				useDashRenderingSelector.selected = useDashedRendering;
+			}
+
+			normalized = normalizedModel.normalizedArrowSourceType;
+			if (normalized.isDefined)
+			{
+				arrowSourceType = normalized.value;
+				linkTypeSelector.isArrowSourceUnknown = false;
+				linkTypeSelector.arrowSourceType = arrowSourceType;
+			}
+			else
+			{
+				arrowSourceType = GenericLinkConstants.ARROW_SOURCE_TYPE;
+				linkTypeSelector.isArrowSourceUnknown = true;
+				linkTypeSelector.arrowSourceType = arrowSourceType;
+			}
+
+			normalized = normalizedModel.normalizedArrowTargetType;
+			if (normalized.isDefined)
+			{
+				arrowTargetType = normalized.value;
+				linkTypeSelector.isArrowTargetUnknown = false;
+				linkTypeSelector.arrowTargetType = arrowTargetType;
+			}
+			else
+			{
+				arrowTargetType = GenericLinkConstants.ARROW_TARGET_TYPE;
+				linkTypeSelector.isArrowTargetUnknown = true;
+				linkTypeSelector.arrowTargetType = arrowTargetType;
+			}
+		}
+
+		/**
+		 * Applies the selected rendering policy to the link model.
+		 */
+		protected function updateRenderingPolicy():void
+		{
+			useDashedRendering = useDashRenderingSelector.selected;
+			if (useDashedRendering)
+				selectedEdgesModel.renderingPolicy = LinkStyle.LINK_RENDERING_DASH;
+			else
+				selectedEdgesModel.renderingPolicy = LinkStyle.LINK_RENDERING_SOLID;
+		}
+
+		/**
+		 * Applies the selected arrow styles to the link model.
+		 */
+		protected function updateLinkType():void
+		{
+			if (!linkTypeSelector.isArrowSourceUnknown)
+				selectedEdgesModel.arrowSourceType = linkTypeSelector.arrowSourceType;
+			if (!linkTypeSelector.isArrowTargetUnknown)
+				selectedEdgesModel.arrowTargetType = linkTypeSelector.arrowTargetType;
+		}
+
+		/**
+		 * Casts the IDefaultGroupRendererModel
+		 * to NormalizedDefaultItemRendererModel
+		 *
+		 * @return
+		 *		normalized model
+		 */
+		protected function getNormalizedModel():NormalizedGenericLinkModel
+		{
+			if (!selectedEdgesModel)
+				return null;
+			return NormalizedGenericLinkModel(selectedEdgesModel);
+		}
+
+		/**
+		 * Reference to the <code>IGenericLinkModel</code> instance
+		 * used to configure the current edge (link) selection.
+		 */
+		public function get selectedEdgesModel():IGenericLinkModel
+		{
+			if (!appModel)
+				return null;
+			if (!appModel.diagrammerModel)
+				return null;
+
+			return appModel.diagrammerModel.selectedEdgesModel;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			_applicationModel = objValue;
+		}
+	]]>
+	</fx:Script>
+
+			<s:VGroup top="6" bottom="12" left="12" width="136">
+				<forms:StepperSelector id="thicknessSelector"
+					label="Weight"
+					min="{1}" max="{10}"
+					value="{thickness}"
+					modified="{selectedEdgesModel.thickness = event.target.value}"
+				/>
+				<forms:ColorSelector id="lineColorSelector"
+					label="Color"
+					value="{lineColor}"
+					modified="{selectedEdgesModel.lineColor = event.target.value}"
+				/>
+				<mx:Spacer height="4" />
+				<forms:LinkTypeSelector id="linkTypeSelector"
+					label="Arrowheads"
+					arrowSourceTypes="{arrowSourceTypes}"
+					arrowTargetTypes="{arrowTargetTypes}"
+					arrowSourceType="{null}"
+					arrowTargetType="{null}"
+					modified="{updateLinkType()}"
+				/>
+
+				<forms:IndeterminateCheckbox
+					id="useDashRenderingSelector"
+					label="Dashed line"
+					selected="{useDashedRendering}"
+					change="{updateRenderingPolicy()}"
+				/>
+
+			</s:VGroup>
+
+</components:OptionsPanel>

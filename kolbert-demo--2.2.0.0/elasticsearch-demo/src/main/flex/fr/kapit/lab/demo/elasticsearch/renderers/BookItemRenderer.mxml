@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false" mouseChildren="false"
+				height="100%" width="100%"
+				>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.elasticsearch.model.AmazonBook;
+
+		private var _book:AmazonBook;
+		
+		[Bindable] private var _bookImageSource:String;
+		[Bindable] private var _bookTitle:String;
+		[Bindable] private var _bookAuthor:String;
+
+		public override function set data(value:Object):void
+		{
+			super.data = value;
+
+			_book = value as AmazonBook;
+			if (_book)
+			{
+				_bookTitle = _book.title;
+				_bookAuthor = "by " + _book.author;
+				_bookImageSource = _book.image;
+			}
+			else
+				_bookTitle = _bookAuthor = _bookImageSource = "";
+		}
+		
+		public function get book():AmazonBook
+		{
+			return _book;
+		}
+	]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" stateGroups="selectedState" />
+		<s:State name="down" />
+		<s:State name="normalAndShowsCaret" />
+		<s:State name="hoveredAndShowsCaret" stateGroups="selectedState" />
+		<s:State name="selectedAndShowsCaret" stateGroups="selectedState" />
+		<s:State name="downAndSelected" stateGroups="selectedState" />
+	</s:states>
+	
+	<!--Stroke-->
+	<s:Group width="100%" height="100%" includeIn="hovered" alpha="0.5">
+		<s:Rect top="0" left="0" right="0" bottom="0"
+				radiusX="7" radiusY="7">
+			<s:fill>
+				<s:SolidColor color="#125B91"/>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="1" left="1" right="1" bottom="1"
+				radiusX="6" radiusY="6">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="#299BD0" ratio="0"/>
+					<s:GradientEntry color="#1F77C0" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="2" left="2" right="2" bottom="2"
+				radiusX="5" radiusY="5">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="#2282C4" ratio="0"/>
+					<s:GradientEntry color="#1A65B2" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="5" left="5" right="5" bottom="5"
+				radiusX="4" radiusY="4">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="#299BD0" ratio="0"/>
+					<s:GradientEntry color="#1F77C0" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="6" left="6" right="6" bottom="6"
+				radiusX="4" radiusY="4">
+			<s:fill>
+				<s:SolidColor color="#125B91"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<s:Group width="100%" height="100%" includeIn="selectedState">
+		<s:Rect top="0" left="0" right="0" bottom="0"
+				radiusX="7" radiusY="7">
+			<s:fill>
+				<s:SolidColor color="#125B91"/>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="1" left="1" right="1" bottom="1"
+				radiusX="6" radiusY="6">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="#299BD0" ratio="0"/>
+					<s:GradientEntry color="#1F77C0" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="2" left="2" right="2" bottom="2"
+				radiusX="5" radiusY="5">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="#2282C4" ratio="0"/>
+					<s:GradientEntry color="#1A65B2" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="5" left="5" right="5" bottom="5"
+				radiusX="4" radiusY="4">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="#299BD0" ratio="0"/>
+					<s:GradientEntry color="#1F77C0" ratio="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect top="6" left="6" right="6" bottom="6"
+				radiusX="4" radiusY="4">
+			<s:fill>
+				<s:SolidColor color="#125B91"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<s:Group left="7" right="7" top="7" bottom="7">
+		
+		<s:Rect left="0" right="0" top="0" bottom="0"
+				radiusX="3" radiusY="3">
+			<s:fill>
+				<s:SolidColor color="0xB3B3B3" />
+			</s:fill>
+		</s:Rect>
+		
+		<s:Rect left="1" right="1" top="1" bottom="1"
+				radiusX="3" radiusY="3">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0xE6E6E6" />
+					<s:GradientEntry color="0xF0F0F0" />
+				</s:LinearGradient>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke color="0xFFFFFF" weight="1" />
+			</s:stroke>
+		</s:Rect>
+		
+		<s:Group left="10" right="10" top="10" bottom="10">
+			<s:HGroup left="5" right="5" top="5" bottom="5" gap="10">
+				<s:Group verticalCenter="0" left="10">
+					<s:Rect width="86" height="110">
+						<s:stroke>
+							<s:SolidColorStroke color="0xFFFFFF" weight="4" />
+						</s:stroke>
+						<s:filters>
+							<s:GlowFilter color="0x000000" alpha=".35" quality="2" inner="false" strength="1" />
+						</s:filters>
+					</s:Rect>
+					<s:Image id="bookImage" top="2" left="2"
+							 source="{_bookImageSource}" 
+							 width="82" height="106"
+							 scaleMode="stretch"
+							 />
+				</s:Group>
+				<s:VGroup gap="12" width="100%">
+					<s:Label text="{_bookTitle}" width="100%" color="0x333333"
+							 fontSize="14" fontFamily="Calibri" fontWeight="bold"
+							 maxDisplayedLines="2"
+							 />
+					<s:Label text="{_bookAuthor}" width="100%" color="0x999999"
+							 fontSize="12" fontFamily="Calibri"
+							 maxDisplayedLines="1"
+							 />
+				</s:VGroup>
+			</s:HGroup>
+		</s:Group>
+		
+	</s:Group>
+	
+</s:ItemRenderer>

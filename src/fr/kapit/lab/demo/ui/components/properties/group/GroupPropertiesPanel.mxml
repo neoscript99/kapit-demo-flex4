@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel implements="fr.kapit.lab.demo.ui.components.IConfigPanel"
+						 xmlns:component="fr.kapit.lab.demo.panel.component.*"
+						 xmlns:components="fr.kapit.lab.demo.common.components.*"
+						 xmlns:forms="fr.kapit.lab.demo.forms.*"
+						 xmlns:fx="http://ns.adobe.com/mxml/2009"
+						 xmlns:mx="library://ns.adobe.com/flex/mx"
+						 xmlns:s="library://ns.adobe.com/flex/spark"
+						 width="100%"
+						 title="Properties"
+						 >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.model.NormalizedDefaultGroupRendererModel;
+		import fr.kapit.lab.demo.models.IDefaultGroupRendererModel;
+		import fr.kapit.lab.demo.models.constants.DefaultGroupRendererConstants;
+		import fr.kapit.lab.demo.ui.components.IConfigPanel;
+		import fr.kapit.lab.demo.util.NormalizedValue;
+
+
+		[Bindable]
+		public var dataLabel:String = null;
+
+		[Bindable]
+		public var beginBackgroundColor:uint = DefaultGroupRendererConstants.BACKGROUND_COLORS_BEGIN;
+
+		[Bindable]
+		public var endBackgroundColor:uint = DefaultGroupRendererConstants.BACKGROUND_COLORS_BEGIN;
+
+		[Bindable]
+		public var borderColor:uint = DefaultGroupRendererConstants.BORDER_COLOR;
+
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			var normalizedModel:NormalizedDefaultGroupRendererModel;
+			normalizedModel = getNormalizedModel();
+
+			if (!normalizedModel)
+			{
+				return;
+			}
+
+			var normalized:NormalizedValue;
+
+			normalized = normalizedModel.normalizedDataLabel;
+			if (normalized.isDefined)
+			{
+				dataLabel = normalized.value;
+				dataLabelSelector.text = dataLabel;
+			}
+			else
+			{
+				dataLabel = null;
+				dataLabelSelector.text = dataLabel;
+			}
+
+			normalized = normalizedModel.normalizedBackgroundColors;
+			if (normalized.isDefined)
+			{
+				beginBackgroundColor = normalized.value;
+				endBackgroundColor = normalized.value;
+				backgroundColorSelector.isUnknownColor = false;
+				backgroundColorSelector.value = beginBackgroundColor;
+			}
+			else
+			{
+				beginBackgroundColor = DefaultGroupRendererConstants.BACKGROUND_COLORS_BEGIN;
+				endBackgroundColor = DefaultGroupRendererConstants.BACKGROUND_COLORS_BEGIN;
+				backgroundColorSelector.isUnknownColor = true;
+				backgroundColorSelector.value = beginBackgroundColor;
+			}
+
+			normalized = normalizedModel.normalizedBorderColor;
+			if (normalized.isDefined)
+			{
+				borderColor = normalized.value;
+				borderColorSelector.isUnknownColor = false;
+				borderColorSelector.value = borderColor;
+			}
+			else
+			{
+				borderColor = DefaultGroupRendererConstants.BORDER_COLOR;
+				borderColorSelector.isUnknownColor = true;
+				borderColorSelector.value = borderColor;
+			}
+		}
+
+
+
+		/**
+		 * Applies the label to the current node selection.
+		 */
+		protected function updateDataLabel():void
+		{
+			selectedGroupRenderersModel.dataLabel = dataLabelSelector.text;
+		}
+
+		/**
+		 * Applies the background colors to the current group selection.
+		 */
+		private function updateBackgroundColors():void
+		{
+			if (backgroundColorSelector.isUnknownColor)
+			{
+				return;
+			}
+			beginBackgroundColor = backgroundColorSelector.value;
+			endBackgroundColor = backgroundColorSelector.value;
+			selectedGroupRenderersModel.backgroundColors = [ beginBackgroundColor, endBackgroundColor ];
+		}
+
+		/**
+		 * Applies the border color to the current group selection.
+		 */
+		private function updateBorderColor():void
+		{
+			if (borderColorSelector.isUnknownColor)
+			{
+				return;
+			}
+			borderColor = borderColorSelector.value;
+			selectedGroupRenderersModel.borderColor = borderColor;
+		}
+
+		/**
+		 * Casts the IDefaultGroupRendererModel
+		 * to NormalizedDefaultGroupRendererModel
+		 *
+		 * @return
+		 *		normalized model
+		 */
+		protected function getNormalizedModel():NormalizedDefaultGroupRendererModel
+		{
+			if (! selectedGroupRenderersModel)
+			{
+				return null;
+			}
+			return NormalizedDefaultGroupRendererModel(selectedGroupRenderersModel);
+		}
+
+		/**
+		 * Reference to the <code>IDefaultGroupRendererModel</code> instance
+		 * used to configure the current group selection.
+		 */
+		public function get selectedGroupRenderersModel():IDefaultGroupRendererModel
+		{
+			if (!appModel)
+			{
+				return null;
+			}
+			if (!appModel.diagrammerModel)
+			{
+				return null;
+			}
+
+			return appModel.diagrammerModel.selectedGroupRenderersModel;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			_applicationModel = objValue;
+		}
+	]]>
+	</fx:Script>
+
+
+	<s:VGroup width="100%">
+
+		<s:HGroup width="100%" verticalAlign="bottom">
+			<s:Label fontWeight="bold" text="Label" />
+			<s:TextInput id="dataLabelSelector"
+						 width="100%"
+						 text="{dataLabel}"
+						 change="updateDataLabel()"
+						 />
+		</s:HGroup>
+
+		<s:Line width="100%">
+			<s:stroke>
+				<s:SolidColorStroke color="#C5C5C8" caps="square" />
+			</s:stroke>
+		</s:Line>
+
+		<forms:ColorSelector id="backgroundColorSelector"
+							 label="Background Color" value="{beginBackgroundColor}"
+							 modified="{updateBackgroundColors()}"
+							 />
+		<forms:ColorSelector id="borderColorSelector"
+							 label="Stroke Color" value="{borderColor}"
+							 modified="{updateBorderColor()}"
+							 />
+	</s:VGroup>
+
+
+</components:OptionsPanel>

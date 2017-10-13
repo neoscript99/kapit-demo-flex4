@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup implements="fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel"
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:forms="fr.kapit.lab.demo.forms.*" xmlns:components="fr.kapit.lab.demo.common.components.*"
+>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.common.data.ColorPickerColor;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.model.NormalizedDefaultItemRendererModel;
+		import fr.kapit.lab.demo.models.IDefaultItemRendererModel;
+		import fr.kapit.lab.demo.models.constants.DefaultItemRendererConstants;
+		import fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel;
+		import fr.kapit.lab.demo.util.NormalizedValue;
+		
+		import spark.events.IndexChangeEvent;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+		[Bindable] public var borderThickness:uint = DefaultItemRendererConstants.BORDER_THICKNESS;
+		[Bindable] public var borderColor:uint = DefaultItemRendererConstants.BORDER_COLOR;
+
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			var normalizedModel:NormalizedDefaultItemRendererModel;
+			normalizedModel = getNormalizedModel();
+
+			if (! normalizedModel)
+				return;
+
+			var normalized:NormalizedValue;
+
+			normalized = normalizedModel.normalizedBorderThickness;
+			if (normalized.isDefined)
+			{
+				borderThickness = normalized.value;
+				borderThicknessSelector.isUnknownValue = false;
+				borderThicknessSelector.value = borderThickness;
+			}
+			else
+			{
+				borderThickness = DefaultItemRendererConstants.BORDER_THICKNESS;
+				borderThicknessSelector.isUnknownValue = true;
+				borderThicknessSelector.value = borderThickness;
+			}
+
+			normalized = normalizedModel.normalizedBorderColor;
+			if (normalized.isDefined)
+			{
+				borderColor = normalized.value;
+				borderColorPicker.selectedColor = borderColor;
+			}
+			else
+			{
+				borderColor = DefaultItemRendererConstants.BORDER_COLOR;
+			
+				borderColorPicker.selectedColor = borderColor;
+			}
+		}
+
+
+		/**
+		 * Applies the border thickness to the current node selection.
+		 */
+		protected function updateBorderThickness():void
+		{
+			if (borderThicknessSelector.isUnknownValue)
+				return;
+			selectedNodeRenderersModel.borderThickness = borderThicknessSelector.value;
+		}
+		/**
+		 * Applies the border color to the current node selection.
+		 */
+
+		protected function borderColorPicker_changeHandler(event:IndexChangeEvent):void
+		{
+			if(borderColorPicker.selectedItem)
+				selectedNodeRenderersModel.borderColor = ColorPickerColor(borderColorPicker.selectedItem).color;
+		}
+
+		/**
+		 * Casts the IDefaultItemRendererModel
+		 * to NormalizedDefaultItemRendererModel
+		 *
+		 * @return
+		 *		normalized model
+		 */
+		protected function getNormalizedModel():NormalizedDefaultItemRendererModel
+		{
+			if (! selectedNodeRenderersModel)
+				return null;
+			return NormalizedDefaultItemRendererModel(selectedNodeRenderersModel);
+		}
+
+		/**
+		 * Reference to the <code>IDefaultItemRendererModel</code> instance
+		 * used to configure the current node selection.
+		 */
+		public function get selectedNodeRenderersModel():IDefaultItemRendererModel
+		{
+			if (! appModel)
+				return null;
+			if (! appModel.diagrammerModel)
+				return null;
+
+			return appModel.diagrammerModel.selectedNodeRenderersModel;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			_applicationModel = objValue;
+		}
+	]]>
+	</fx:Script>
+
+	<forms:StepperSelector id="borderThicknessSelector"
+		label="Weight"
+		value="{borderThickness}"
+		modified="{updateBorderThickness()}"
+	/>
+
+	<s:HGroup width="100%"  paddingTop="5">
+		<s:Label text="Color" paddingTop="5" fontWeight="bold" verticalAlign="middle"/>
+		<components:ColorPicker id="borderColorPicker" change="borderColorPicker_changeHandler(event)"  selectedColor="{borderColor}"  />
+	</s:HGroup>
+
+</s:VGroup>

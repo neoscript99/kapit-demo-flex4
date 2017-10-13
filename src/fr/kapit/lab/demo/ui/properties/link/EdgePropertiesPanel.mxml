@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel 
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:component="fr.kapit.lab.demo.panel.component.*"
+	xmlns:forms="fr.kapit.lab.demo.forms.*"
+	width="100%" xmlns:components="fr.kapit.lab.demo.common.components.*"
+	title="Properties" labelProperty="Link"
+>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.visualizer.styles.LinkStyle;
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.diagrammer.Diagrammer;
+		import fr.kapit.lab.demo.models.constants.GenericLinkConstants;
+
+		
+
+
+		[Bindable] public var lineColor:uint = GenericLinkConstants.LINE_COLOR;
+		[Bindable] public var thickness:uint = GenericLinkConstants.THICKNESS;
+		[Bindable] public var useDashedRendering:Boolean;
+		protected var _diagrammer:Diagrammer
+
+		/**
+		 * @private
+		 * Reference to the diagrammer.
+		 */
+		[Bindable]
+		public function get diagrammer():Diagrammer
+		{
+			return _diagrammer;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set diagrammer(value:Diagrammer):void
+		{
+			_diagrammer = value;
+		}
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function updateStyle():void
+		{
+			var linkStyle:LinkStyle;
+			linkStyle = new LinkStyle();
+			linkStyle.thickness = thicknessSelector.value;
+			linkStyle.lineColor = lineColorSelector.value;
+			linkStyle.renderingPolicy = useDashRenderingSelector.selected ? LinkStyle.LINK_RENDERING_DASH : LinkStyle.LINK_RENDERING_SOLID;
+			diagrammer.linkStyle = linkStyle
+
+
+		}
+
+
+
+	]]>
+	</fx:Script>
+
+			<s:VGroup top="6" bottom="12" left="12" width="136">
+				<forms:StepperSelector id="thicknessSelector"
+					label="Weight"
+					min="{1}" max="{10}"
+					value="{thickness}"
+					click="{updateStyle()}" 
+				/>
+				<forms:ColorSelector id="lineColorSelector"
+					label="Color"
+					value="{lineColor}"
+					modified="{updateStyle()}" 
+				/>
+				<mx:Spacer height="4" />
+				<forms:IndeterminateCheckbox
+					id="useDashRenderingSelector"
+					label="Dashed line"
+					change="{updateStyle()}" 
+				/>
+
+			</s:VGroup>
+
+</components:OptionsPanel>

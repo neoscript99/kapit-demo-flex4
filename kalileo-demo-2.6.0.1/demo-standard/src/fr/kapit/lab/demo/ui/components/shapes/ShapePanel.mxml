@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel implements="fr.kapit.lab.demo.ui.components.IConfigPanel"
+						 xmlns:component="fr.kapit.lab.demo.panel.component.*"
+						 xmlns:components="fr.kapit.lab.demo.common.components.*"
+						 xmlns:forms="fr.kapit.lab.demo.forms.*"
+						 xmlns:fx="http://ns.adobe.com/mxml/2009"
+						 xmlns:lib="fr.kapit.diagrammer.lib.*"
+						 xmlns:libSelector="fr.kapit.diagrammer.artifacts.components.*"
+						 xmlns:local="*"
+						 xmlns:mx="library://ns.adobe.com/flex/mx"
+						 xmlns:panel="fr.kapit.lab.demo.panel.*"
+						 xmlns:people="fr.kapit.lab.demo.ui.renderers.people.*"
+						 xmlns:renderers="fr.kapit.lab.demo.ui.renderers.*"
+						 xmlns:s="library://ns.adobe.com/flex/spark"
+						 width="100%"
+						 title="Shapes"
+						 >
+
+	<fx:Declarations>
+		<fx:Array id="shapeList">
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_ROUNDEDBOX}"
+					   label="label"
+					   group="Basic shapes" renderer="default" type=""
+					   />
+
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_BOX}"
+					   label="label"
+					   group="Basic shapes" renderer="rectangle" type=""
+					   />
+
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_DOCUMENT}"
+					   label="label"
+					   group="Basic shapes" renderer="document" type=""
+					   />
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_TRAPEZE}"
+					   label="label"
+					   group="Basic shapes" renderer="trapeze" type=""
+					   />
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE}"
+					   label="label"
+					   group="Basic shapes" renderer="circle" type=""
+					   />
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE}"
+					   label="label"
+					   group="Basic shapes" renderer="losange" type=""
+					   />
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_POLY6}"
+					   label="label"
+					   group="Basic shapes" renderer="hexagon" type=""
+					   />
+			<fx:Object color="0x00ff00" icon="{EmbeddedAssets.IMG_MENUBAR_POLY8}"
+					   label="label"
+					   group="Basic shapes" renderer="octagon" type=""
+					   />
+
+
+
+
+		</fx:Array>
+		<fx:Array id="advancedShapeList">
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_VCARD}"
+					   label=""
+					   group="Basic shapes" renderer="Vcard" type=""
+					   />
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_UML}"
+					   label=""
+					   group="Basic shapes" renderer="UML" type=""
+					   />
+
+		</fx:Array>
+
+		<fx:Array id="peopleList">
+
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_PEOPLE_21}"
+					   image="{EmbeddedAssets.RENDERER_PEOPLE_21}"
+					   label=""
+					   renderer="people21" type=""
+					   />
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_PEOPLE_22}"
+					   image="{EmbeddedAssets.RENDERER_PEOPLE_22}"
+					   label=""
+					   renderer="people22" type=""
+					   />
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_PEOPLE_23}"
+					   image="{EmbeddedAssets.RENDERER_PEOPLE_23}"
+					   label=""
+					   renderer="people23" type=""
+					   />
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_PEOPLE_24}"
+					   image="{EmbeddedAssets.RENDERER_PEOPLE_24}"
+					   label=""
+					   renderer="people24" type=""
+					   />
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_PEOPLE_25}"
+					   image="{EmbeddedAssets.RENDERER_PEOPLE_25}"
+					   label=""
+					   renderer="people25" type=""
+					   />
+			<fx:Object icon="{EmbeddedAssets.IMG_MENUBAR_PEOPLE_26}"
+					   image="{EmbeddedAssets.RENDERER_PEOPLE_26}"
+					   label=""
+					   renderer="people26" type=""
+					   />
+		</fx:Array>
+
+
+
+
+
+	</fx:Declarations>
+	<fx:Script>
+
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.diagrammer.actions.DropAction;
+		import fr.kapit.diagrammer.actions.data.DropActionData;
+		import fr.kapit.diagrammer.lib.data.LibUnit;
+		import fr.kapit.diagrammer.lib.data.TableParams;
+		import fr.kapit.lab.demo.ui.renderers.standard.CircleEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.standard.DocumentEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.standard.HexagonEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.standard.LosangeEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.standard.OctagonEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.standard.RectangleEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.standard.TrapezeEditorRenderer;
+		import fr.kapit.visualizer.base.ISprite;
+		
+		import mx.controls.Image;
+		import mx.controls.listClasses.IListItemRenderer;
+		import mx.core.DragSource;
+		import mx.core.UIComponent;
+		import mx.events.DragEvent;
+		import mx.events.FlexEvent;
+		import mx.events.ListEvent;
+		import mx.managers.DragManager;
+
+		private var _applicationModel:ApplicationModel=null;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(value:ApplicationModel):void
+		{
+			_applicationModel = value;
+		}
+
+		/**
+		 *  showing toolTip in roll over
+		 */
+		protected function menu_itemRollOverHandler(event:ListEvent):void
+		{
+			var item:Object=(event.itemRenderer.data);
+			menuBasic.toolTip="";
+			menuBasic.toolTip=item.renderer;
+
+		}
+
+		protected function menuAdvancedShapes_itemRollOverHandler(event:ListEvent):void
+		{
+			var item:Object=(event.itemRenderer.data);
+			menuAdvancedShapes.toolTip="";
+			menuAdvancedShapes.toolTip=item.renderer;
+		}
+	]]>
+	</fx:Script>
+
+	<s:Group width="100%">
+		<s:layout>
+			<s:VerticalLayout />
+		</s:layout>
+        <s:VGroup gap="10" paddingTop="5" paddingBottom="2">
+			<s:Label  paddingBottom="-8" text="Basic Shapes"/>
+			<panel:TileListNoSelectionIndicator id="menuBasic"
+												width="100%"
+												dataProvider="{shapeList}"
+												iconField="icon" labelField="type"
+												dragEnabled="true" dragMoveEnabled="false" dropEnabled="false"
+												rowHeight="24" rowCount="1"
+												columnCount="10" columnWidth="24"
+												itemRollOver="menu_itemRollOverHandler(event)"
+												>
+			</panel:TileListNoSelectionIndicator>
+			<s:Label  paddingBottom="-9" paddingTop="0" text="Dynamic Shapes"/>
+			<panel:TileListNoSelectionIndicator id="menuAdvancedShapes"
+												width="100%"
+												dataProvider="{advancedShapeList}"
+												iconField="icon" labelField="type"
+												dragEnabled="true" dragMoveEnabled="false" dropEnabled="false"
+												rowHeight="24" rowCount="1"
+												columnCount="2" columnWidth="24"
+												itemRollOver="menuAdvancedShapes_itemRollOverHandler(event)"
+												>
+				
+			</panel:TileListNoSelectionIndicator>
+			<s:Label paddingBottom="-10" paddingTop="0" text="User Shapes"/>
+			<panel:TileListNoSelectionIndicator id="menuPeople"
+												width="100%" iconField="icon"
+												dataProvider="{peopleList}" labelField="type"
+												dragEnabled="true" dragMoveEnabled="false" dropEnabled="false" 
+												rowCount="1" rowHeight="34"
+												columnCount="6" columnWidth="24"
+												>
+				
+			</panel:TileListNoSelectionIndicator>
+
+		</s:VGroup>
+		
+	</s:Group>
+
+
+</components:OptionsPanel>
+

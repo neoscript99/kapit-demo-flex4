@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		currentState="normal" alpha.disabled="0.5">
+
+	<!-- Host Component -->
+	<fx:Metadata>[HostComponent("fr.kapit.elasticsearch.render.ElasticFilter")]</fx:Metadata>
+	
+	<!-- States -->
+	<s:states>
+		<s:State name="normal" stateGroups="normalGroup, fillGroup"/>
+		<s:State name="normalAndEmpty" stateGroups="normalGroup, emptyGroup"/>
+		<s:State name="disabled" stateGroups="disabledGroup, fillGroup"/>
+		<s:State name="disabledAndEmpty" stateGroups="disabledGroup, emptyGroup"/>
+	</s:states>
+
+	<!-- MXML Content -->
+	<s:VGroup gap="0" width="100%" height="100%">
+		<s:Group width="100%" id="headerPart">
+			<s:Rect left="0" right="0" height="42">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0xDBDBDB" />
+						<s:GradientEntry color="0xC7C7C7" />
+					</s:LinearGradient>
+				</s:fill>
+			</s:Rect>
+			<s:Rect left="0" right="0" height="1" bottom="0">
+				<s:fill>
+					<s:SolidColor color="0x999999" />
+				</s:fill>
+			</s:Rect>
+			<s:Label id="filterTitleLabel"
+					 fontFamily="Calibri" fontSize="16"
+					 verticalCenter="0" left="14"
+					 >
+				<s:filters>
+					<s:DropShadowFilter blurX="0" blurY="0" distance="1" angle="90" color="0xFFFFFF" />
+				</s:filters>
+			</s:Label>
+			<s:Button label="Clear" enabled="{hostComponent.selectionSet}"
+					  verticalCenter="0" right="14"
+					  click="hostComponent.reset()"
+					  />
+		</s:Group>
+		<s:Scroller id="listScroller" width="100%" height="100%" includeIn="fillGroup"
+					horizontalScrollPolicy="off" verticalScrollPolicy="auto">
+			<s:Group id="list" width="100%" />
+		</s:Scroller>
+	</s:VGroup>
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0x999999" />
+		</s:stroke>
+	</s:Rect>
+	
+</s:Skin>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+						  xmlns:s="library://ns.adobe.com/flex/spark"
+						  xmlns:mx="library://ns.adobe.com/flex/mx"
+						  focusEnabled="true"
+						  width="100%" minHeight="50">
+	<fx:Script>
+		<![CDATA[
+			[Bindable] public var editedText:String;
+		]]>
+	</fx:Script>
+
+	<s:TextArea id="editingTextInput"
+				left="10" right="10"
+				top="0" bottom="0"
+				verticalCenter="0"
+				text="{dataGridListData.label}"
+				change="{editedText = editingTextInput.text}"
+				updateComplete="{editedText = editingTextInput.text}"/>
+
+</s:MXDataGridItemRenderer>

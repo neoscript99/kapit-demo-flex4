@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009"
+			 xmlns:s="library://ns.adobe.com/flex/spark"
+			 minWidth="112" alpha.disabled="0.5"
+			 blendMode="normal"
+			 > 
+    
+    <fx:Metadata>[HostComponent("spark.components.List")]</fx:Metadata>
+    
+    <s:states>
+        <s:State name="normal" />
+        <s:State name="disabled" />
+    </s:states>
+    
+	<s:Rect left="0" top="0" right="0" height="2">
+		<s:fill>
+			<s:SolidColor color="0x808080"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect left="0" top="2" right="0" bottom="0">
+		<s:fill>
+			<s:SolidColor color="0xF7F7F7"/>
+		</s:fill>
+	</s:Rect>
+
+    <s:Scroller left="0" top="2" right="0" bottom="0" id="scroller" minViewportInset="1" hasFocusableChildren="false">
+        <s:DataGroup id="dataGroup" itemRenderer="fr.kapit.lab.demo.elasticsearch.renderers.BookItemRenderer">
+			<s:layout>
+				<s:TileLayout requestedColumnCount="3" columnAlign="justifyUsingWidth"
+							  columnWidth="257" rowHeight="158" clipAndEnableScrolling="true"
+							  paddingLeft="13" paddingRight="13" paddingTop="13" paddingBottom="13"
+							  />
+			</s:layout>
+        </s:DataGroup>
+    </s:Scroller>
+</s:SparkSkin>

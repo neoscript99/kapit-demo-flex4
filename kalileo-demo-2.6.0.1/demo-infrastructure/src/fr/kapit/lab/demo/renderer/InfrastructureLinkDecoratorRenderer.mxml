@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="fr.kapit.visualizer.renderers.IDecoratorRenderer,
+		 fr.kapit.visualizer.renderers.IRenderer, fr.kapit.diagrammer.renderers.IEditable, mx.core.IDataRenderer"
+		 width="24" height="24">
+	<fx:Script>
+		<![CDATA[
+			import fr.kapit.diagrammer.renderers.IEditable;
+			import fr.kapit.lab.demo.data.NetworkLinkModel;
+			import fr.kapit.lab.demo.util.FilterUtil;
+			import fr.kapit.visualizer.base.IItem;
+			import fr.kapit.visualizer.base.ISprite;
+			import fr.kapit.visualizer.renderers.IDecoratorRenderer;
+			import fr.kapit.visualizer.renderers.IRenderer;
+			import fr.kapit.visualizer.utils.ColorUtils;
+			
+			import mx.core.IDataRenderer;
+			import mx.utils.ColorUtil;
+			
+			[Bindable]
+			protected var _dataModel:NetworkLinkModel;
+			[Bindable]
+			protected var requestPerSecond:uint;
+
+			
+
+			/**
+			 * @inheritDoc
+			 */
+			public function get dataModel():Object
+			{
+				return _dataModel;
+			}
+			public function set dataModel(value:Object):void
+			{
+				_dataModel = value as NetworkLinkModel;
+				if(_dataModel)
+					requestPerSecond = _dataModel.bandwidthUsagePercentage;
+			}
+			protected var _limitWidth:Number= 0;
+			protected var _limitHeight:Number= 0;
+			/**
+			 * @inheritDoc
+			 */
+			public function get limitWidth():Number
+			{
+				return _limitWidth
+			}
+			public function get limitHeight():Number
+			{
+				return _limitHeight;
+			}
+			protected var _isSizeFixed:Boolean=true;
+			/**
+			 * @inheritDoc
+			 */
+			public function get isSizeFixed():Boolean
+			{
+				return _isSizeFixed;
+			}
+			public function set isSizeFixed(value:Boolean):void
+			{
+				_isSizeFixed = value;
+			}
+			protected var _prohibitLinkingFrom:Boolean;
+			/**
+			 * @inheritDoc
+			 */
+			public function get prohibitLinkingFrom():Boolean
+			{
+				return _prohibitLinkingFrom;
+			}
+			public function set prohibitLinkingFrom(value:Boolean):void
+			{
+				_prohibitLinkingFrom = value;
+			}
+
+			protected var _prohibitLinkingTo:Boolean;
+			/**
+			 * @inheritDoc
+			 */
+			public function get prohibitLinkingTo():Boolean
+			{
+				return _prohibitLinkingTo;
+			}
+			public function set prohibitLinkingTo(value:Boolean):void
+			{
+				_prohibitLinkingTo = value;
+			}
+
+			protected var _data:Object ;
+			/**
+			 * @inheritDoc
+			 */
+			public function get data():Object
+			{
+				return _data;
+			}
+			public function set data(value:Object):void
+			{
+				_data = value;
+			}
+			protected var _item:ISprite;
+			/**
+			 * @inheritDoc
+			 */
+			public function get item():IItem
+			{
+				return _item;
+			}
+			public function set item(value:IItem):void
+			{
+				_item = value as ISprite;
+			}
+			protected var _isFixed:Boolean=true;
+			/**
+			 * @inheritDoc
+			 */
+			public function get isFixed():Boolean
+			{
+				return _isFixed;
+			}
+			public function set isFixed(value:Boolean):void
+			{
+				_isFixed = value;
+			}
+			private var _anchorX:Number=0;
+			/**
+			 * @inheritDoc
+			 */
+			public function get anchorX():Number
+			{
+				return _anchorX- (_item?_item.width*0.5:0);
+			}
+
+			/**
+			 * @private
+			 */
+			public function set anchorX(value:Number):void
+			{
+				_anchorX = value;
+			}
+
+			private var _anchorY:Number=0;
+			/**
+			 * @inheritDoc
+			 */
+			public function get anchorY():Number
+			{
+				return _anchorY;
+			}
+
+			/**
+			 * @private
+			 */
+			public function set anchorY(value:Number):void
+			{
+				_anchorY = value;
+			}
+			
+			[Bindable]
+			protected var _colorValue:Number=0xD10002;
+			[Bindable]
+			protected var _lightColorValue:Number=0xD10002;
+			
+			protected var _color1:uint=0x1EB300;
+			public function get color1():uint
+			{
+				return _color1;
+			}
+			
+			public function set color1(value:uint):void
+			{
+				_color1 = value;
+			}
+			protected var _color2:uint=0xF0B514;
+			public function get color2():uint
+			{
+				return _color2;
+			}
+			
+			public function set color2(value:uint):void
+			{
+				_color2 = value;
+			}
+			protected var _color3:uint=0xD10002;
+			public function get color3():uint
+			{
+				return _color3;
+			}
+			
+			public function set color3(value:uint):void
+			{
+				_color3 = value;
+			}
+			
+			[Bindable]
+			public function get colorValue():Number
+			{
+				return _colorValue;
+			}
+			public function set colorValue(value:Number):void
+			{
+				
+				var colorObject1:Object=ColorUtils.getRGB(color1);
+				var colorObject2:Object=ColorUtils.getRGB(color2);
+				var colorObject3:Object=ColorUtils.getRGB(color3);
+				var coeff:Number = _dataModel.bandwidthUsagePercentage;
+				var g:uint;
+				  if ((coeff>=0)&&(coeff<=50))
+					  g=((colorObject2.g-colorObject1.g)/50)*coeff+colorObject1.g;
+				  else
+					  g=((colorObject3.g-colorObject2.g)/50)*coeff+2*colorObject2.g-colorObject3.g;
+				  var r:uint;
+				  if((coeff>=50)&&(coeff<=100))
+					  r=((colorObject3.r-colorObject2.r)/50)*coeff+2*colorObject2.r-colorObject3.r;
+				  else
+					r=((colorObject2.r-colorObject1.r)/50)*coeff+colorObject1.r;  
+				var b:uint=0;
+				if ((coeff>=0)&&(coeff<=50))
+					b=((colorObject2.b-colorObject1.b)/50)*coeff+colorObject1.b;
+				else
+					b=((colorObject3.b-colorObject2.b)/50)*coeff+2*colorObject2.b-colorObject3.b;
+				_colorValue = (b + 256 *(g + 256 *r));
+				_lightColorValue = ColorUtil.adjustBrightness2(_colorValue,20);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	<fx:Binding source="_dataModel.bandwidthUsagePercentage" destination="colorValue" twoWay="false"/>
+	<s:Group width="100%" height="100%">
+		<s:Ellipse left="0" right="0" top="0" bottom="0">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry  color="{_lightColorValue}" alpha="1"/>
+					<s:GradientEntry  color="{_colorValue}" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke color="0x999999" scaleMode="normal" weight="1"/>
+			</s:stroke>
+		</s:Ellipse>
+	</s:Group>
+	<s:HGroup width="100%" height="100%"
+			  verticalAlign="middle" horizontalAlign="center">
+		<s:Label color="0xFFFFFF" fontSize="10" fontWeight="bold" height="100%" verticalAlign="middle"
+				 text="{String(_dataModel.bandwidthUsagePercentage)}"
+				 filters="{FilterUtil.onePixelDarkShadow()}"/>
+	</s:HGroup>
+</s:Group>

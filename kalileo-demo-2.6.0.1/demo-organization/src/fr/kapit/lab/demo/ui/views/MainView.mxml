@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components1:TemplateDemoContainer xmlns:components="fr.kapit.lab.demo.ui.components.*"
+								   xmlns:components1="fr.kapit.lab.demo.common.components.*"
+								   xmlns:diagrammer="fr.kapit.diagrammer.*"
+								   xmlns:fx="http://ns.adobe.com/mxml/2009"
+								   xmlns:info="fr.kapit.lab.demo.info.*"
+								   xmlns:layouts="fr.kapit.lab.demo.ui.components.layouts.*"
+								   xmlns:menubar="fr.kapit.lab.demo.ui.components.menubar.*"
+								   xmlns:mx="library://ns.adobe.com/flex/mx"
+								   xmlns:panel="fr.kapit.lab.demo.panel.*"
+								   xmlns:properties="fr.kapit.lab.demo.ui.components.properties.*"
+								   xmlns:s="library://ns.adobe.com/flex/spark"
+								   xmlns:visualizer="fr.kapit.visualizer.*"
+								   width="100%" height="100%"
+								   openOptions="true"
+								   showAboutInfo="this_showAboutInfoHandler(event)"
+								   title="Diagram Organization"
+								   creationComplete="mainView_creationCompleteHandler(event)"
+								   >
+	<fx:Script>
+	<![CDATA[
+		import data.GrapheLibrary;
+		
+		import flash.filters.GlowFilter;
+		
+		import fr.kapit.actionscript.lang.ArrayUtil;
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.diagrammer.actions.DropAction;
+		import fr.kapit.diagrammer.actions.LinkAction;
+		import fr.kapit.diagrammer.actions.data.DropActionData;
+		import fr.kapit.diagrammer.actions.data.LinkActionData;
+		import fr.kapit.diagrammer.constants.ControllerVisibilityConstants;
+		import fr.kapit.diagrammer.lib.data.TableParams;
+		import fr.kapit.diagrammer.renderers.DefaultEditorGroupRenderer;
+		import fr.kapit.diagrammer.renderers.DefaultEditorRenderer;
+		import fr.kapit.lab.demo.data.PeopleData;
+		import fr.kapit.lab.demo.data.VCardData;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.popup.ErrorPopup;
+		import fr.kapit.lab.demo.popup.ErrorPopupWithOption;
+		import fr.kapit.lab.demo.ui.components.popupLogger.PopupLogger;
+		import fr.kapit.lab.demo.ui.renderers.advanced.VCardItemRenderer;
+		import fr.kapit.lab.demo.ui.renderers.group.CustomGroupRenderer;
+		import fr.kapit.lab.demo.ui.renderers.people.PeopleRenderer;
+		import fr.kapit.lab.demo.ui.renderers.standard.CustomStandardVisualizerNode;
+		import fr.kapit.lab.demo.util.ArrowCursor;
+		import fr.kapit.lab.demo.util.DictionaryUtil;
+		import fr.kapit.layouts.algorithms.balloon.BalloonLayout;
+		import fr.kapit.layouts.algorithms.basic.ILayout;
+		import fr.kapit.layouts.algorithms.circular.SingleCycleCircularLayout;
+		import fr.kapit.layouts.algorithms.forcedirected.fade.ProgressiveFadeLayout;
+		import fr.kapit.layouts.algorithms.forcedirected.gem.StaticGEMLayout;
+		import fr.kapit.layouts.algorithms.hierarchical.HierarchicalLayout;
+		import fr.kapit.layouts.algorithms.orthogonal.OrthogonalLayout;
+		import fr.kapit.layouts.algorithms.radial.RadialLayout;
+		import fr.kapit.layouts.algorithms.sugiyama.SugiyamaLayout;
+		import fr.kapit.layouts.constants.EdgeDrawType;
+		import fr.kapit.layouts.constants.RootSelectionType;
+		import fr.kapit.visualizer.actions.DisplaceAction;
+		import fr.kapit.visualizer.actions.data.DisplaceActionData;
+		import fr.kapit.visualizer.base.IGroup;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		import fr.kapit.visualizer.renderers.IRenderer;
+		import fr.kapit.visualizer.utils.data.BorderParam;
+		import fr.kapit.visualizer.visualizer_internal;
+		
+		import mx.collections.ArrayCollection;
+		import mx.core.IFlexDisplayObject;
+		import mx.events.FlexEvent;
+		import mx.events.ResizeEvent;
+		import mx.managers.PopUpManager;
+        
+		use namespace visualizer_internal;
+		
+		/**
+		 * @private
+		 * Reference to the global application model.
+		 */
+		[Bindable]
+		private var _applicationModel:ApplicationModel = null;
+
+		/**
+		 * @private
+		 * Current ratio of the visualizer component.
+		 */
+		[Bindable]
+		private var _zoomRatio:Number = 1;
+
+		/**
+		 * @private
+		 * Instance of popup to display error on layouts
+		 */
+		private var _layoutErrorPopup:IFlexDisplayObject;
+
+		private var _rootSelectionPolicies:ArrayCollection = new ArrayCollection([
+			{label:"Most closed", value:RootSelectionType.MOST_CLOSED_ROOT_SELECTION},
+			{label:"Most surrounded", value:RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION},
+			{label:"Most weighted", value:RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION}
+		]);
+		/**
+		 * Reference to the global application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			if (null != appModel)
+			{
+				appModel.visualizer = null;
+			}
+			_applicationModel = objValue;
+			if ((null != appModel) && (null != visualizer))
+			{
+				appModel.visualizer = visualizer;
+			}
+		}
+		/* *********
+		* Rendering
+		************/
+		/**
+		 * Function used to return custom visual content (MXML component, Video, Image..) for each node given its data.
+		 * The function takes as input the node data and according to it returns a custom <code>DisplayObject</code> instance.
+		 * It is called at rendering time for each node or when setting this property.
+		 * Injecting data on the created renderer is mandatory when using this function. The aim is to let developer better control data assignment and construction
+		 * and to let your renderers free from Kalileo control.
+		 * @param data Object to set to the node
+		 */
+		protected function nodeRendererFunction(rendererData:Object):DisplayObject
+		{
+			// Data Control on GraphML Data Provider assignment.
+			//Called once on data provider assignment : The data provider
+				var type:String=rendererData.type;
+				rendererData=dataCloneFunction(rendererData);
+				var icon:Class;
+				switch (type)
+				{
+					case "people21":
+					  icon=EmbeddedAssets.RENDERER_PEOPLE_21;
+					  break;
+					case "people22":
+					  icon=EmbeddedAssets.RENDERER_PEOPLE_22;
+					  break;
+					case "people23":
+					  icon=EmbeddedAssets.RENDERER_PEOPLE_23;
+					  break;
+				    case "people24":
+					  icon=EmbeddedAssets.RENDERER_PEOPLE_24;
+					  break;
+					case "people25":
+					  icon=EmbeddedAssets.RENDERER_PEOPLE_25;
+					  break;
+				    case "people26":
+					  icon=EmbeddedAssets.RENDERER_PEOPLE_26;
+					  break;
+				}
+				PeopleData(rendererData).imageClass=icon;
+				
+			//Regular item renderer creation and data assignment
+			var item:IRenderer;
+			if(rendererData is VCardData)
+				item= new VCardItemRenderer();
+			else if (rendererData is PeopleData)
+			{
+				item=new PeopleRenderer(); 
+			}
+
+			else // Case default data
+				item = new CustomStandardVisualizerNode();
+			if(item)
+				item.data = rendererData; // Injecting data is mandatory when using nodeRendererFunction (for better control on data assignment and construction)
+			return item as DisplayObject;
+		}
+		
+
+		/* *************
+		* Configuration methods
+		**************/
+		
+		protected function configureData():void
+		{
+			/*
+			* Notice : this may work for an application executed from
+			* the local drive (offline mode), since the "download" will
+			* only take an instant.
+			* Please remember that the user supplied file is loaded
+			* on the preinitialize event of the application.
+			*/
+			if (null != GrapheLibrary.userData)
+			{
+				appModel.visualizerModel.dataProvider = GrapheLibrary.userData;
+			}
+			else
+			{
+				appModel.visualizerModel.dataProvider = GrapheLibrary.getAsXML(GrapheLibrary.DEFAULT_XML);
+			}
+			
+			visualizer.nodeExportDataFunction = exportNodeFunction;
+			visualizer.nodeImportDataFunction = importNodeFunction;
+
+		}
+		protected function configureRendering():void
+		{
+			// Default node labelling
+			visualizer.groupLabelField = "label";
+			visualizer.nodeLabelFields = "label";
+			//Configuring Layout
+			appModel.visualizerModel.layoutID = SugiyamaLayout.ID;
+			visualizer.hierarchicalCyclicLayout.differentiatedEdges=false;
+			appModel.visualizerModel.layoutModel.edgeDrawing = 4;
+			appModel.visualizerModel.layoutModel.verticalDistance=60;
+			appModel.visualizerModel.layoutModel.horizontalDistance=200;
+			// configure expand / collapse buttons
+			visualizer.setStyle("showNodeExpandCollapseButton", 0);
+			visualizer.setStyle("groupExpandIcon",EmbeddedAssets.GROUP_EXPAND);
+			visualizer.setStyle("groupExpandDownIcon",EmbeddedAssets.GROUP_EXPAND);
+			visualizer.setStyle("groupExpandOverIcon",EmbeddedAssets.GROUP_EXPAND);
+			visualizer.setStyle("groupCollapseIcon",EmbeddedAssets.GROUP_COLLAPSE);
+			visualizer.setStyle("groupCollapseDownIcon",EmbeddedAssets.GROUP_COLLAPSE);
+			visualizer.setStyle("groupCollapseOverIcon",EmbeddedAssets.GROUP_COLLAPSE);
+			visualizer.setStyle("groupExpandButtonMarginX",0);
+			visualizer.setStyle("groupExpandButtonMarginY",0);
+			visualizer.setStyle("groupExpandButtonPlacement",'topRight'); 
+			visualizer.setStyle("nodeHighlightColor",0x2284C0); 
+			visualizer.setStyle("nodeSelectionColor",0x2284C0);
+			visualizer.nodeHighlightFilters = [new GlowFilter(0x00A2D2,0.7,8,8,2,1,false)];
+			//Rendering
+			visualizer.nodeRendererFunction = nodeRendererFunction;
+			visualizer.groupRendererClass=CustomGroupRenderer; 
+			// node contours 
+			
+		}
+		protected function configureListeners():void
+		{
+			
+			// invoke propertiesPanel.synchronize();
+			datavizComponent_selectionChangeHandler(null);
+			/*
+			* The event listener is added with a very low priority, so
+			* it may be triggered last
+			*/
+			visualizer.addEventListener(
+				VisualizerEvent.ELEMENTS_SELECTION_CHANGED,
+				datavizComponent_selectionChangeHandler,
+				false, -10, true
+			);
+			
+			/*
+			* Errors catching on layout failure
+			*/
+			visualizer.addEventListener(VisualizerEvent.LAYOUT_FAILED, layoutFailedHandler);
+			visualizer.addEventListener(VisualizerEvent.LAYOUT_SUCCEED, layoutSucceedHandler);
+			visualizer.addEventListener(VisualizerEvent.LAYOUT_COMMIT_COMPLETE, layoutCommitComplete);
+			
+			visualizer.addEventListener(VisualizerEvent.ELEMENTS_CREATED, onElementCreated)
+			visualizer.addEventListener(VisualizerEvent.ELEMENTS_DELETED, onElementCreated)
+			visualizer.addEventListener(VisualizerEvent.GROUP_ELEMENTS, onElementCreated)
+			visualizer.addEventListener(VisualizerEvent.UNGROUP_ELEMENTS, onElementCreated)
+			/*
+			* Used to synchronize the zoom ratio of the diagrammer component and the overview component
+			*/
+			visualizer.addEventListener(VisualizerEvent.GRAPH_FITTED, graphZoomedHandler);
+			visualizer.addEventListener(VisualizerEvent.GRAPH_ZOOMED, graphZoomedHandler);
+			
+		}
+		protected function configureActions():void
+		{
+			//Displace Action configuration
+			var displaceActionData:DisplaceActionData = new DisplaceActionData();
+			displaceActionData.elementsToDisplace = visualizer.selection;
+			var borderParam:BorderParam = new BorderParam();
+			borderParam.enableBorderDrag=true;
+			borderParam.enableContinuousBorderDrag =  true;
+			displaceActionData.borderParam = borderParam;
+			visualizer.updateAction(DisplaceAction.ID,displaceActionData);
+			
+		}
+		public function dataCloneFunction(dataToClone:Object):Object
+		{
+			var type:String = dataToClone["type"] ? dataToClone["type"] : null;
+			var item:Object;
+			if (type && type.indexOf("people")!=-1)
+			{
+				item = new PeopleData();
+				PeopleData(item).imageClass = EmbeddedAssets.getPeopleAsset(type);
+				PeopleData(item).type = type;
+			}
+			else
+			{
+				item = new Object();
+				item.renderer = dataToClone["renderer"]? dataToClone["renderer"] :null;
+				item.type = dataToClone["type"]? dataToClone["type"] :null;
+				item.icon = dataToClone["icon"]? dataToClone["icon"] :null;
+				item.label = dataToClone["label"]? dataToClone["label"] :null;
+				item.color = ""; // No Color is taken into account at drop
+			}
+			return item;
+		}
+		protected function isGroupFunction(dataToCheck:Object):Boolean
+		{
+			return dataToCheck.component == "group";
+		}
+		
+		protected function isTableFunction(dataToCheck:Object):TableParams
+		{
+			var tableParams:TableParams= new TableParams();
+			return dataToCheck.component=="table"?tableParams:null;
+		}
+		
+		/* *************
+		* Import/Export functions
+		**************/
+		
+		private function exportNodeFunction(dataToExport:Object):XML
+		{
+			var xml:XML;
+			xml = new XML(<data/>);
+			if (dataToExport.hasOwnProperty("label"))
+				xml.@label = dataToExport["label"].toString();
+			if (dataToExport.hasOwnProperty("renderer"))
+				xml.@renderer = dataToExport["renderer"].toString();
+			if (dataToExport.hasOwnProperty("id"))
+				xml.@id = dataToExport["id"].toString();
+			if (dataToExport.hasOwnProperty("type"))
+				xml.@type = dataToExport["type"].toString();
+			
+			return xml;
+		}
+		private function importNodeFunction(xml:XML):Object
+		{
+			var item:Object;
+			var type:String =xml.@type.toString();
+			if (type.indexOf("people")!=-1)
+			{
+				item = new PeopleData();
+				item.type = type
+				item.imageClass = EmbeddedAssets.getPeopleAsset(item.type);
+			}
+			else
+			{
+				item = new Object();
+				if(xml.hasOwnProperty("@renderer"))
+					item["renderer"] = xml.@renderer.toString();
+				if(xml.hasOwnProperty("@label"))
+					item["label"] = xml.@label.toString();
+				if(xml.hasOwnProperty("@id"))
+					item["id"] = uint(xml.@id.toString());
+				if(xml.hasOwnProperty("@type"))
+					item["type"] = xml.@type.toString();
+			}
+			return item;
+		}
+
+		/* *************
+		* Hander methods
+		**************/
+		
+		protected function this_showAboutInfoHandler(event:Event):void
+		{
+			aboutPanel.open = true;
+		}
+		/**
+		 * Invoked upon creation of the view.
+		 *
+		 * @param event
+		 */
+		protected function mainView_creationCompleteHandler(event:FlexEvent):void
+		{
+			appModel.visualizer = visualizer;
+			//Data Assignement
+			configureData();
+			//Configure Rendering
+			configureRendering();
+			//Configure Actions data
+			configureActions();
+			//Creating Event Handlers
+			configureListeners();
+			
+		}
+		/**
+		 * @private
+		 * Updates the current ratio
+		 *
+		 * @param event
+		 */
+		protected function graphZoomedHandler(event:VisualizerEvent):void
+		{
+			_zoomRatio = visualizer.ratio;
+		}
+		
+		protected function layoutCommitComplete(event:VisualizerEvent):void
+		{
+			layoutPanel.layoutCommitComplete(event);
+		}
+		
+		protected function onElementCreated(event:VisualizerEvent):void
+		{
+			layoutPanel.onElementCreated(event);
+			checkIfDiagrammerHasNoElements();
+		}
+		
+		private function checkIfDiagrammerHasNoElements():void
+		{
+			appModel.visualizerModel.isEmpty = DictionaryUtil.isEmpty(visualizer.nodesMap);
+		}
+		
+		/**
+		 * @private
+		 * Handles an error when a layout failed
+		 *
+		 * @param event
+		 */
+		protected function layoutFailedHandler(event:VisualizerEvent):void
+		{
+			if (ArrayUtil.isInArray(
+				[BalloonLayout.ID, RadialLayout.ID],
+				visualizer.layoutID
+			))
+			{
+				/*
+				* If the current layout is Radial or Balloon, then it failed
+				* due to the 'rootSelectionPolicy' that cannot render a
+				* cyclic graph. So we provide an error popup with a combobox
+				* that permits the user to specify another value for this
+				* property.
+				*/
+				_layoutErrorPopup = PopUpManager.createPopUp(this, ErrorPopupWithOption, true);
+				PopUpManager.centerPopUp(_layoutErrorPopup);
+				ErrorPopupWithOption(_layoutErrorPopup).title = "Error";
+				ErrorPopupWithOption(_layoutErrorPopup).showBtClose = false;
+				ErrorPopupWithOption(_layoutErrorPopup).errorLabel = "This is a cyclic graph. To apply this layout, you need to specify another root selection policy than 'directed'";
+				ErrorPopupWithOption(_layoutErrorPopup).combobox_option.dataProvider = _rootSelectionPolicies;
+				ErrorPopupWithOption(_layoutErrorPopup).addEventListener(Event.CLOSE, closeErrorPopupWithOptionHandler);
+				
+				layoutPanel.enableControls = false;
+			}
+			else
+			{
+				_layoutErrorPopup = PopUpManager.createPopUp(this, ErrorPopup, true);
+				PopUpManager.centerPopUp(_layoutErrorPopup);
+				ErrorPopup(_layoutErrorPopup).title = "Error";
+				ErrorPopup(_layoutErrorPopup).showBtClose = false;
+				ErrorPopup(_layoutErrorPopup).errorLabel = "This graph cannot be processed with this layout";
+				ErrorPopup(_layoutErrorPopup).addEventListener(Event.CLOSE, closeErrorPopupHandler);
+				
+				layoutPanel.enableControls = false;
+			}
+		}
+		
+		protected function layoutSucceedHandler(event:VisualizerEvent):void
+		{
+			layoutPanel.enableControls = true;
+		}
+		protected function closeErrorPopupHandler(event:Event):void
+		{
+			PopUpManager.removePopUp(_layoutErrorPopup);
+		}
+		protected function closeErrorPopupWithOptionHandler(event:Event):void
+		{
+			var rootSelectionPolicy:int = ErrorPopupWithOption(_layoutErrorPopup).combobox_option.selectedItem.value;
+			_applicationModel.visualizerModel.layoutModel.rootSelectionPolicy = rootSelectionPolicy;
+			PopUpManager.removePopUp(_layoutErrorPopup);
+			visualizer.reLayout();
+		}
+		
+		/**
+		 * @private
+		 * Handles the ELEMENTS_SELECTION_CHANGED event dispatched by
+		 * the data-visualization component, updates the properties panels
+		 * according to the current selection.
+		 *
+		 * @param event
+		 */
+		private function datavizComponent_selectionChangeHandler(event:VisualizerEvent):void
+		{
+			propertiesPanel.synchronize();
+			menubar.synchronize();
+		}
+		protected function visualizer_rollOverHandler(event:MouseEvent):void
+		{
+			if (menubar.cursorAction)
+			{
+				ArrowCursor.icon = menubar.cursorAction;
+				ArrowCursor.zoomActivated = menubar.zoomStateActivated;
+				cursorManager.setCursor(ArrowCursor);
+			}
+		}
+		
+		protected function visualizer_rollOutHandler(event:MouseEvent):void
+		{
+			cursorManager.removeAllCursors();
+		}
+		
+		protected function visualizer_elementsHandler(event:VisualizerEvent):void
+		{
+			_applicationModel.visualizerModel.isEmpty = event.items.length < 1;
+		}
+		
+		protected function visualizer_elementsSelectionChangedHandler(event:VisualizerEvent):void
+		{
+			var selection:Array = visualizer.selection;
+			var groupsList:Array = [];
+			for each (var s:Object in selection)
+			{
+				if (s is IGroup)
+				{
+					groupsList.push(s);
+				}
+			}
+		}
+		
+	]]>
+	</fx:Script>
+
+	<components1:optionsContent>
+		<layouts:LayoutPanel id="layoutPanel" appModel="{appModel}" />
+		<properties:PropertiesPanel id="propertiesPanel" appModel="{appModel}" />
+	</components1:optionsContent>
+
+	<visualizer:Visualizer id="visualizer"
+						   width="100%"
+						   top="40" bottom="0"
+						   groupLayoutField="layout"
+						   elementsCreated="visualizer_elementsHandler(event)"
+						   elementsDeleted="visualizer_elementsHandler(event)"
+						   elementsSelectionChanged="visualizer_elementsSelectionChangedHandler(event)"
+						   rollOver="visualizer_rollOverHandler(event)"
+						   rollOut="visualizer_rollOutHandler(event)"
+						   />
+
+	<menubar:MenuBar id="menubar"
+					 width="100%" height="40"
+					 model="{_applicationModel.visualizerModel}"
+					 />
+
+
+	<fx:Declarations>
+		<components1:AboutPanel id="aboutPanel"
+								parentPopUp="{this}" title="About Kalileo Organization Demo"
+								>
+			<components1:description>
+				<![CDATA[
+				<br/>This demo is a simple diagramming application. Kalileo’s Diagrammer component is used in order to provide hierarchical modeling capabilities. It focuses on the following features implementation:<br/>
+				<li><b> Grouping:</b> Nodes can be grouped together. As groups are also considered as nodes, it is possible to make groups of groups. Groups can either be expanded or collapsed and benefit from the global layout applied to the graph.</li>
+				<li><b> Rendering:</b> This demo uses the standard renderers provided by Diagrammer but custom renderers can be easily done.</li>
+				<li><b> Import/Export:</b> Save your graph and reload it anytime.</li></li>]]>
+			</components1:description>
+				
+		</components1:AboutPanel>
+		
+	</fx:Declarations>
+
+</components1:TemplateDemoContainer>

@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="utf-8"?>
+<visualizer:Visualizer xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:visualizer="fr.kapit.visualizer.*"
+					   decoratorZoomLimit="2" enableAutomaticLinkBundling="false"
+					   groupLabelField="uid" groupRendererClass="{MapClusterRenderer}"
+					   linkDecoratorRendererClass="{MapFlightRoadDecorator}"
+					   linkIDField="uid" linkSourceField="sourceNode"
+					   linkStyleFunction="{mapLinkStyleFunction}"
+					   linkTargetField="targetNode" maxZoomRatio="10" minZoomRatio="0.3"
+					   nodeIDField="uid" nodeLabelFields="uid"
+					   nodeRendererClass="{MapAirportRenderer}"
+					   nodeTooltipBackgroundColors="{[0x49494B,0x1F1C20]}"
+					   nodeTooltipBorderColor="0x211E22"
+					   nodeTooltipFields="label;country;nationalFlights;internationalFlights"
+					   nodeTooltipFontSize="11" nodeTooltipTailHeight="12"
+					   nodeTooltipTailWidth="8"
+					   nodeTooltipTitles="Label;Country;National;International"
+					   nodeXField="longitude" nodeXPositionFunction="{nodeXFunction}"
+					   nodeYField="latitude" nodeYPositionFunction="{nodeYFunction}"
+					   nodeZoomLimit="1" showGroupExpandCollapseButton="false"
+					   >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.data.utils.StructureUtils;
+		import fr.kapit.lab.demo.data.config.MapParams;
+		import fr.kapit.lab.demo.data.map.MapAirport;
+		import fr.kapit.lab.demo.data.map.MapCluster;
+		import fr.kapit.lab.demo.data.map.MapEntity;
+		import fr.kapit.lab.demo.data.map.MapFlightRoad;
+		import fr.kapit.lab.demo.renderer.map.MapAirportRenderer;
+		import fr.kapit.lab.demo.renderer.map.MapClusterRenderer;
+		import fr.kapit.lab.demo.renderer.map.MapFlightRoadDecorator;
+		import fr.kapit.layouts.model.Edge;
+		import fr.kapit.layouts.model.EdgeBundle;
+		import fr.kapit.layouts.model.Node;
+		import fr.kapit.visualizer.actions.PanAction;
+		import fr.kapit.visualizer.actions.ZoomAction;
+		import fr.kapit.visualizer.actions.data.ZoomActionData;
+		import fr.kapit.visualizer.base.IGroup;
+		import fr.kapit.visualizer.base.ILink;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		import fr.kapit.visualizer.layers.ICustomLayer;
+		import fr.kapit.visualizer.managers.beans.LinkBundle;
+		import fr.kapit.visualizer.styles.LinkStyle;
+		import fr.kapit.visualizer.utils.LinkUtils;
+
+		import mx.collections.ICollectionView;
+		import mx.utils.ColorUtil;
+
+		import org.osmf.layout.ScaleMode;
+
+
+
+		protected var _countryZoomRatio:Number = 1.1;
+
+		public function get countryZoomRatio():Number
+		{
+			return _countryZoomRatio;
+		}
+
+		protected var _townZoomRatio:Number =1.9;
+
+		public function get townZoomRatio():Number
+		{
+			return _townZoomRatio;
+		}
+
+
+		private var _mapLayerClass:Class = ArcGisMapLayer;
+
+		public function get mapLayerClass():Class
+		{
+			return _mapLayerClass;
+		}
+
+		public function set mapLayerClass(value:Class):void
+		{
+			_mapLayerClass = value;
+		}
+
+
+		private var _mapLayer:IMapLayer;
+
+		protected var _mapParams:MapParams;
+
+		protected var _mapParamsChanged:Boolean = true;
+
+		private var _mapInitialized:Boolean;
+
+		public function get mapParams():MapParams
+		{
+			return _mapParams;
+		}
+
+		public function set mapParams(value:MapParams):void
+		{
+			_mapParams = value;
+			_mapParamsChanged = true;
+			invalidateDisplayList();
+		}
+
+
+		protected var _isLinksVisible:Boolean = true;
+
+		private var _itemsVisibilityChanged:Boolean;
+
+		public function get isLinksVisible():Boolean
+		{
+			return _isLinksVisible;
+		}
+
+		public function set isLinksVisible(value:Boolean):void
+		{
+			_isLinksVisible = value;
+			_itemsVisibilityChanged = true;
+			invalidateProperties();
+		}
+
+		protected var _visibleColorifiedItems:Array;
+
+		public function get visibleColorifiedItems():Array
+		{
+			return _visibleColorifiedItems;
+		}
+
+		public function set visibleColorifiedItems(value:Array):void
+		{
+			_visibleColorifiedItems = value;
+			_itemsVisibilityChanged = true;
+			invalidateProperties();
+		}
+
+
+		protected var _isZoomPanActionActivated:Boolean = true;
+
+		public function set isZoomPanActionActivated(value:Boolean):void
+		{
+			_isZoomPanActionActivated = value;
+			if (!_isZoomPanActionActivated)
+			{
+				deactivateAction(ZoomAction.ID);
+				deactivateAction(PanAction.ID);
+			}
+			else
+			{
+				activateAction(ZoomAction.ID);
+				activateAction(PanAction.ID);
+			}
+		}
+
+		public function set forceGraphUpdate(value:Boolean):void
+		{
+			_positionnerChanged = _layoutChanged = _mapInitialized = true;
+			invalidateProperties();
+		}
+
+		private var _linkStylesChanged:Boolean;
+
+		public function set forceLinkStyleUpdate(value:Boolean):void
+		{
+			_linkStylesChanged = true;
+			invalidateProperties();
+		}
+
+		public function get mapLevel():Number
+		{
+			return _mapLayer ? _mapLayer.level : 1;
+		}
+
+		//Stats
+		public var maxFlightCapacityValue:Number;
+
+		public var minFlightCapacityValue:Number;
+
+		public var maxFlightsValue:Number;
+
+		public var minFlightsValue:Number;
+
+		public var linksNumber:Number;
+
+		/* *****************
+		* Init Methods
+		*********************/
+
+		protected override function initActions():void
+		{
+			super.initActions();
+			isZoomPanActionActivated = false;
+		}
+
+		/* *****************
+		* overriden Methods
+		*********************/
+
+		protected override function createChildren():void
+		{
+			super.createChildren();
+			_mapLayer = addLayerAt(new _mapLayerClass(),0) as IMapLayer;
+			_mapLayer.mapVisualizer = this;
+		}
+
+		protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+		{
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+			DisplayObject(_mapLayer).width = unscaledWidth;
+			DisplayObject(_mapLayer).height = unscaledHeight;
+			forceGraphUpdate = true;
+		}
+
+		protected override function commitProperties():void
+		{
+			if (!_mapParams)
+			{
+				return;
+			}
+			if (_mapParamsChanged)
+			{
+				_mapLayer.mapParams = _mapParams;
+				_mapParamsChanged = false;
+			}
+			if (_linksDataProviderChanged)
+			{
+				performFlightsPreReading(_linksDataProvider);
+			}
+
+			super.commitProperties();
+			if (_linkStylesChanged)
+			{
+				commitLinkStyle();
+			}
+		}
+
+		/* ***********
+		* Data Methods
+		**************/
+
+		protected function performFlightsPreReading(flightRoads:ICollectionView):void
+		{
+			if (!flightRoads)
+			{
+				return;
+			}
+			linksNumber = flightRoads.length;
+			var flightRoad:MapFlightRoad;
+			maxFlightCapacityValue = -Number.MAX_VALUE;
+			minFlightCapacityValue = Number.MAX_VALUE;
+			maxFlightsValue = -Number.MAX_VALUE;
+			minFlightsValue = Number.MAX_VALUE;
+			for each (flightRoad in flightRoads)
+			{
+				if (flightRoad.flightsCapacity > maxFlightCapacityValue)
+				{
+					maxFlightCapacityValue = flightRoad.flightsCapacity;
+				}
+				if (flightRoad.flights > maxFlightsValue)
+				{
+					maxFlightsValue = flightRoad.flights;
+				}
+				if (flightRoad.flightsCapacity < minFlightCapacityValue)
+				{
+					minFlightCapacityValue = flightRoad.flightsCapacity;
+				}
+				if (flightRoad.flights < minFlightsValue)
+				{
+					minFlightsValue = flightRoad.flights;
+				}
+			}
+		}
+
+		/* ***********
+		* Zoom Function
+		**************/
+
+		protected var _defaultLevel:uint = 5;
+
+		protected var _zoomStep:Number = 0.2;
+
+		public function getZoomByLevel():Number
+		{
+			return _mapLayer ? 1-(_defaultLevel-_mapLayer.level)*_zoomStep : 1;
+		}
+
+		public function zoomToLevel(level:uint):void
+		{
+			_mapLayer.zoomAt(level);
+		}
+
+		/* *************
+		* Link functions
+		******************/
+
+		private static var NATIONAL_FLIGHT_COLOR:uint = 0xD41444;
+
+		private static var INTERNATIONAL_FLIGHT_COLOR:uint = 0x29ABE2;
+
+		private static var MIN_NATIONAL_FLIGHT_THICKNESS:uint = 2;
+
+		private static var MAX_NATIONAL_FLIGHT_THICKNESS:uint = 4;
+
+		private static var MIN_INTERNATIONAL_FLIGHT_THICKNESS:uint = 2;
+
+		private static var MAX_INTERNATIONAL_FLIGHT_THICKNESS:uint = 10;
+
+		protected function mapLinkStyleFunction(data:MapFlightRoad):LinkStyle
+		{
+			var sNode:MapAirport  = nodesMap[data.sourceNode].data;
+			var tNode:MapAirport  = nodesMap[data.targetNode].data;
+			var lStyle:LinkStyle = new LinkStyle();
+			lStyle.scaleMode = ScaleMode.NONE;
+			if (sNode.country == tNode.country) //National Flight
+			{
+				lStyle.lineColor = NATIONAL_FLIGHT_COLOR;
+				lStyle.highlightColor = ColorUtil.adjustBrightness2(NATIONAL_FLIGHT_COLOR,40);
+				lStyle.selectionColor = ColorUtil.adjustBrightness2(NATIONAL_FLIGHT_COLOR,-30);
+				lStyle.thickness = lStyle.selectionThickness = lStyle.highlightThickness = MIN_NATIONAL_FLIGHT_THICKNESS + (MAX_NATIONAL_FLIGHT_THICKNESS-MIN_NATIONAL_FLIGHT_THICKNESS)*(data.flights/maxFlightsValue);
+			}
+			else
+			{
+				lStyle.lineColor = INTERNATIONAL_FLIGHT_COLOR;
+				lStyle.highlightColor = ColorUtil.adjustBrightness2(INTERNATIONAL_FLIGHT_COLOR,40);
+				lStyle.selectionColor = ColorUtil.adjustBrightness2(INTERNATIONAL_FLIGHT_COLOR,-30);
+				lStyle.thickness =  MIN_INTERNATIONAL_FLIGHT_THICKNESS + (MAX_INTERNATIONAL_FLIGHT_THICKNESS-MIN_INTERNATIONAL_FLIGHT_THICKNESS)*(data.flights/maxFlightsValue);
+				lStyle.lineAlpha = lStyle.selectionAlpha = lStyle.highlightAlpha = 0.3;
+				var link:ILink = linksMap[data.uid];
+				if (!link.source.isVisibleInContainer || !link.target.isVisibleInContainer)
+				{
+					var links:Array = LinkUtils.getSiblingLinks(link);
+					if (links && links.length>1)
+					{
+						lStyle.thickness = 0;
+						for each (link in links)
+						{
+							lStyle.thickness += MIN_INTERNATIONAL_FLIGHT_THICKNESS + (MAX_INTERNATIONAL_FLIGHT_THICKNESS-MIN_INTERNATIONAL_FLIGHT_THICKNESS)
+								*(MapFlightRoad(link.data).flights/maxFlightsValue);
+						}
+						lStyle.lineAlpha = 0.5/links.length;
+					}
+				}
+
+				lStyle.selectionThickness = lStyle.highlightThickness = lStyle.thickness;
+			}
+			lStyle.selectionLinkFilters = lStyle.highlightLinkFilters = lStyle.linkFilters = null;
+			return lStyle;
+		}
+
+		/* *************
+		* Positionner functions
+		******************/
+		public function centerMap(entity:MapEntity):void
+		{
+			var node:ISprite = nodesMap[entity.uid];
+			if (!node || !node.isVisibleInContainer)
+			{
+				return;
+			}
+			if (entity is MapAirport)
+			{
+				_mapLayer.centerByLatLong(MapAirport(entity).latitude,MapAirport(entity).longitude);
+			}
+			if (entity is MapCluster)
+			{
+				var group:IGroup = node as IGroup;
+				if (group && !group.isGroupExpanded)
+				{
+					_mapLayer.centerByLatLong(MapCluster(entity).latitude,MapCluster(entity).longitude);
+				}
+			}
+		}
+
+		public function updatePositions():void
+		{
+			commitLayout();
+
+		}
+
+		protected function nodeXFunction(data:MapEntity):Number
+		{
+			if (!_mapLayer || !data || !nodesMap[data.uid])
+			{
+				return unscaledWidth*0.5;
+			}
+			var xPos:Number;
+			if (data is MapAirport)
+			{
+				var mapAirport:MapAirport = MapAirport(data);
+				xPos = !_mapLayer ? 0 : _mapLayer.getPositionFromLatLong(mapAirport.latitude,mapAirport.longitude).x - nodesMap[data.uid].width*nodesMap[data.uid].scaleX*0.5;
+			}
+			else
+			{
+				var mapCluster:MapCluster = MapCluster(data);
+				xPos = !_mapLayer ? 0 : _mapLayer.getPositionFromLatLong(mapCluster.latitude,mapCluster.longitude).x - nodesMap[data.uid].width*nodesMap[data.uid].scaleX*0.5;
+
+			}
+			return xPos;
+		}
+
+		protected function nodeYFunction(data:MapEntity):Number
+		{
+			if (!_mapLayer || !data || !nodesMap[data.uid])
+			{
+				return unscaledHeight*0.5;
+			}
+			var yPos:Number;
+			if (data is MapAirport)
+			{
+				var mapAirport:MapAirport = MapAirport(data);
+				yPos = !_mapLayer ? 0 : _mapLayer.getPositionFromLatLong(mapAirport.latitude,mapAirport.longitude).y - nodesMap[data.uid].height*nodesMap[data.uid].scaleY*0.5;
+			}
+			else
+			{
+				var mapCluster:MapCluster = MapCluster(data);
+				yPos = !_mapLayer ? 0 : _mapLayer.getPositionFromLatLong(mapCluster.latitude,mapCluster.longitude).y - nodesMap[data.uid].height*nodesMap[data.uid].scaleY*0.5;
+
+			}
+			return yPos;
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</visualizer:Visualizer>

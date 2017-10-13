@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group implements="fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel"
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:scene="fr.kapit.lab.demo.ui.components.properties.scene.*"
+	xmlns:node="fr.kapit.lab.demo.ui.components.properties.node.*"
+	xmlns:edge="fr.kapit.lab.demo.ui.components.properties.edge.*"
+	xmlns:group="fr.kapit.lab.demo.ui.components.properties.group.*"
+	width="100%"
+>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.model.DiagrammerModel;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			if (null == diagrammerModel)
+				return;
+
+			if (diagrammerModel.isSelectionEmpty || diagrammerModel.isSelectionNonEditable(true))
+			{
+				currentState = "sceneProperties";
+				sceneProperties.synchronize();
+				return;
+			}
+			if (diagrammerModel.isNodeSelection(true))
+			{
+				currentState = "nodeProperties";
+				nodeProperties.synchronize();
+				return;
+			}
+			if (diagrammerModel.isEdgeSelection(true))
+			{
+				currentState = "edgeProperties";
+				edgeProperties.synchronize();
+				return;
+			}
+			if (diagrammerModel.isGroupSelection(true))
+			{
+				currentState = "groupProperties";
+				groupProperties.synchronize();
+				return;
+			}
+			currentState = "empty";
+		}
+
+
+		/**
+		 * Returns the current diagrammer model.
+		 */
+		public function get diagrammerModel():DiagrammerModel
+		{
+			if (null == appModel)
+				return null;
+			return appModel.diagrammerModel;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+		/** @private */
+		public function set appModel(value:ApplicationModel):void
+		{
+			_applicationModel = value;
+		}
+
+	]]>
+	</fx:Script>
+
+	<s:states>
+		<s:State name="empty" />
+		<s:State name="sceneProperties" />
+		<s:State name="nodeProperties" />
+		<s:State name="edgeProperties" />
+		<s:State name="groupProperties" />
+	</s:states>
+
+	<scene:ScenePropertiesPanel id="sceneProperties" includeIn="sceneProperties" appModel="{appModel}" />
+	<node:NodePropertiesPanel id="nodeProperties" includeIn="nodeProperties" appModel="{appModel}" />
+	<edge:EdgePropertiesPanel id="edgeProperties" includeIn="edgeProperties" appModel="{appModel}" />
+	<group:GroupPropertiesPanel id="groupProperties" includeIn="groupProperties" appModel="{appModel}" />
+
+</s:Group>

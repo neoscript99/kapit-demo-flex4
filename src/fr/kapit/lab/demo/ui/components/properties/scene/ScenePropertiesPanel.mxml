@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel 
+		implements="fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:component="fr.kapit.lab.demo.panel.component.*"
+		 xmlns:forms="fr.kapit.lab.demo.forms.*"
+		 width="100%" title="Selection Properties: Scene"  xmlns:components="fr.kapit.lab.demo.common.components.*"
+		 >
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+		<![CDATA[
+			import fr.kapit.lab.demo.common.data.ColorPickerColor;
+			import fr.kapit.lab.demo.model.ApplicationModel;
+			import fr.kapit.lab.demo.model.DiagrammerModel;
+			import fr.kapit.lab.demo.models.constants.VisualizerConstants;
+			import fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel;
+			
+			import spark.events.IndexChangeEvent;
+
+			[Bindable] public var beginBackgroundColor:uint = VisualizerConstants.BACKGROUND_COLORS_BEGIN;
+			[Bindable] public var endBackgroundColor:uint = VisualizerConstants.BACKGROUND_COLORS_END;
+
+			/**
+			 * @private
+			 * Reference to the application model.
+			 */
+			private var _applicationModel:ApplicationModel = null;
+
+			/**
+			 * Method invoked to update the panel according to state of
+			 * the data visualization component (selection, style...).
+			 */
+			public function synchronize():void
+			{
+				var backgroundColors:Array = diagrammerModel.backgroundColorsStyle;
+				// synchronize() may get called before the diagrammer is fully created.
+				if (null != backgroundColors)
+				{
+					beginBackgroundColor = backgroundColors[0];
+				}
+			}
+ 
+	/* 		private function updateBackgroundColors():void
+			{
+				beginBackgroundColor = backgroundColorSelector.value;
+				endBackgroundColor = backgroundColorSelector.value;
+
+				diagrammerModel.backgroundColorsStyle = [ beginBackgroundColor, endBackgroundColor ];
+			}  */
+
+			/**
+			 * Returns the current diagrammer model.
+			 */
+			public function get diagrammerModel():DiagrammerModel
+			{
+				if (null == appModel)
+					return null;
+				return appModel.diagrammerModel;
+			}
+
+			/**
+			 * Reference to the current application model.
+			 */
+			[Bindable]
+			public function get appModel():ApplicationModel
+			{
+				return _applicationModel;
+			}
+			/** @private */
+			public function set appModel(objValue:ApplicationModel):void
+			{
+				_applicationModel = objValue;
+			}
+			
+	 		protected function colorpicker1_changeHandler(event:IndexChangeEvent):void
+			{
+				beginBackgroundColor = ColorPickerColor(backgroundPicker.selectedItem).color;
+				endBackgroundColor = ColorPickerColor(backgroundPicker.selectedItem).color;
+				
+				diagrammerModel.backgroundColorsStyle = [ beginBackgroundColor, endBackgroundColor ];
+				
+			} 
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="100%"  paddingTop="5">
+		<s:Label text="Background color" paddingTop="5" fontWeight="bold" verticalAlign="middle"/>
+		<components:ColorPicker id="backgroundPicker" change="colorpicker1_changeHandler(event)" selectedColor="{beginBackgroundColor}"  />
+	</s:HGroup>
+   
+
+</components:OptionsPanel>

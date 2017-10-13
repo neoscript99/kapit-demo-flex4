@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel 
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:component="fr.kapit.lab.demo.panel.component.*"
+		 xmlns:forms="fr.kapit.lab.demo.forms.*"
+		 width="100%" title="Properties" labelProperty="Scene"
+		 xmlns:components="fr.kapit.lab.demo.common.components.*"
+		 >
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+		<![CDATA[
+			import fr.kapit.diagrammer.Diagrammer;
+			import fr.kapit.lab.demo.models.constants.VisualizerConstants;
+
+			[Bindable] public var beginBackgroundColor:uint = VisualizerConstants.BACKGROUND_COLORS_BEGIN;
+			[Bindable] public var endBackgroundColor:uint = VisualizerConstants.BACKGROUND_COLORS_END;
+ 			protected var _diagrammer:Diagrammer;
+			/**
+			 * @private
+			 * Reference to the digrammer.
+			 */
+
+			[Bindable]
+			public function get diagrammer():Diagrammer
+			{
+				return _diagrammer;
+			}
+
+			public function set diagrammer(value:Diagrammer):void
+			{
+				_diagrammer = value;
+			}
+
+			/**
+			 * Method invoked to update the panel according to state of
+			 * the data visualization component (selection, style...).
+			 */
+			public function synchronize():void
+			{
+				var backgroundColors:Array = diagrammer.getStyle("backgroundColors") as Array;
+				// synchronize() may get called before the diagrammer is fully created.
+				if (null != backgroundColors)
+				{
+					beginBackgroundColor = backgroundColors[0];
+				}
+			}
+
+			private function updateBackgroundColors():void
+			{
+				beginBackgroundColor = backgroundColorSelector.value;
+				endBackgroundColor = backgroundColorSelector.value;
+
+				diagrammer.setStyle("backgroundColors", [ beginBackgroundColor, endBackgroundColor ]); ;
+			}
+
+
+		]]>
+	</fx:Script>
+
+	<forms:ColorSelector id="backgroundColorSelector"
+						 top="10" left="10" width="140"
+						 label="Background Color"
+						 value="{beginBackgroundColor}"
+						 modified="{updateBackgroundColors()}"
+						 />
+
+</components:OptionsPanel>

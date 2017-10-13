@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group implements="fr.kapit.visualizer.renderers.IRenderer, fr.kapit.visualizer.renderers.ISelectable, fr.kapit.visualizer.renderers.IGroupRenderer"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:util="fr.kapit.lab.demo.util.*"
+		 width="90" height="90"
+		 minHeight="0" minWidth="0"
+		 >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.data.map.MapCluster;
+		import fr.kapit.lab.demo.ui.components.map.MapVisualizer;
+		import fr.kapit.visualizer.base.IGroup;
+		import fr.kapit.visualizer.base.IItem;
+
+		import mx.binding.utils.BindingUtils;
+		import mx.collections.ArrayCollection;
+		import mx.events.CollectionEvent;
+
+
+		protected static var MIN_COUNTRY_SIZE:Number = 60;
+
+		protected static var MAX_COUNTRY_SIZE:Number = 100;
+
+		protected static var MIN_CITY_SIZE:Number = 30;
+
+		protected static var MAX_CITY_SIZE:Number = 100;
+
+		/* ***************
+		* Internal
+		*****************/
+		[Bindable]
+		protected var labelFontSize:uint = 16;
+
+		[Bindable]
+		protected var _includeSummary:Boolean=true;
+
+		[Bindable]
+		protected var _includePictogram:Boolean;
+
+		[Bindable]
+		protected var _includeLabel:Boolean=true;
+
+		[Bindable]
+		protected var _summaryImageSource:Class;
+
+		protected var _unscaledDispalcementX:Number=0;
+
+		protected var _unscaledDispalcementY:Number=0;
+
+		protected var _type:String;
+
+		[Bindable]
+		public function get type():String
+		{
+			return _type;
+		}
+
+		public function set type(value:String):void
+		{
+			_type = value;
+		}
+
+		protected var _supportLevelOfDeltails:Boolean = true;
+
+		public function get supportLevelOfDeltails():Boolean
+		{
+			return _supportLevelOfDeltails;
+		}
+
+		public function set supportLevelOfDeltails(value:Boolean):void
+		{
+			_supportLevelOfDeltails = value;
+		}
+
+		/* ***************
+		* IGroupRenderer implementation
+		*****************/
+		protected var _groupMinSize:Number = 80;
+
+		public function get groupMinHeight():Number
+		{
+			return _groupMinSize;
+		}
+
+		public function get groupMinWidth():Number
+		{
+			return _groupMinSize;
+		}
+
+		public function get groupPaddingBottom():Number
+		{
+			return 1;
+		}
+
+		public function get groupPaddingLeft():Number
+		{
+			return 1;
+		}
+
+		public function get groupPaddingRight():Number
+		{
+			return 1;
+		}
+
+		public function get groupPaddingTop():Number
+		{
+			return 1;
+		}
+
+		protected var _isGroupExpanded:Boolean = true;
+
+		public function set isGroupExpanded(value:Boolean):void
+		{
+			_isGroupExpanded = value;
+		}
+
+		/* ***************
+		* IRenderer implementation
+		*****************/
+
+		protected var _data:Object;
+
+		[Bindable]
+		protected var _cluster:MapCluster;
+
+		public function get data():Object
+		{
+			return _data;
+		}
+
+		public function set data(value:Object):void
+		{
+			_data = value;
+			_cluster = MapCluster(value);
+			type = _cluster.type;
+		}
+
+		protected var _isFixed:Boolean = false;
+
+		public function get isFixed():Boolean
+		{
+			return _isFixed;
+		}
+
+		public function set isFixed(value:Boolean):void
+		{
+			_isFixed = value;
+		}
+
+		protected var _item:IItem;
+
+		protected var _group:IGroup;
+
+		protected var _visualItem:DisplayObject;
+
+		protected var _mapVisualizer:MapVisualizer;
+
+		public function get item():IItem
+		{
+			return _item;
+		}
+
+		public function set item(value:IItem):void
+		{
+			_item = value;
+			_group = IGroup(_item)
+			_visualItem = DisplayObject(_item);
+			_mapVisualizer = _item.visualizer as MapVisualizer;
+			if (_group)
+			{
+				Sprite(_visualItem).mouseEnabled = Sprite(_visualItem).mouseChildren = false
+			}
+			registerBindings();
+		}
+
+		/* ***************
+		* ISelectable implementation
+		*****************/
+
+		protected var _isHighlighted:Boolean;
+
+		public function set isHighlighted(value:Boolean):void
+		{
+			_isHighlighted = value;
+			syncWithState();
+		}
+
+		protected var _isSelected:Boolean;
+
+		public function set isSelected(value:Boolean):void
+		{
+			_isSelected = value;
+			syncWithState();
+		}
+
+		[Bindable]
+		protected var _airportsList:ArrayCollection;
+
+		/* ******
+		* Overriden methods
+		**************/
+
+		protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+		{
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+		}
+
+		/* *******
+		* Sync Methods
+		***********/
+
+		private function syncWithState():void
+		{
+			if (_isSelected && !_isHighlighted)
+			{
+				currentState = "selected";
+			}
+			else if (_isHighlighted)
+			{
+				currentState = "highlighted";
+			}
+			else
+			{
+				currentState = "normal";
+			}
+		}
+
+		protected function registerBindings():void
+		{
+			BindingUtils.bindSetter(updateData,_data,"children",true);
+			_cluster.children.addEventListener(CollectionEvent.COLLECTION_CHANGE, handleChildrenChange);
+		}
+
+		protected function updateRing():void
+		{
+			if (!_group.isGroupExpanded || _group.subGroupDepth==1)
+			{
+				ringHelper.drawRing(this,[_cluster.internationalFlights, _cluster.nationalFlights],_group.isGroupExpanded);
+			}
+			else
+			{
+				graphics.clear();
+			}
+		}
+
+		private function updateData(value:Object):void
+		{
+			_cluster.computeAggregatedValues();
+			_airportsList = _cluster.airportsList;
+			if (_group.subGroupDepth==0)
+			{
+				_groupMinSize = MIN_COUNTRY_SIZE+(MAX_COUNTRY_SIZE-MIN_COUNTRY_SIZE)*_airportsList.length/5;
+			}
+			else
+			{
+				_groupMinSize = MIN_CITY_SIZE+(MAX_CITY_SIZE-MIN_CITY_SIZE)*_airportsList.length/5;
+			}
+		}
+
+		protected function handleChildrenChange(event:CollectionEvent):void
+		{
+			updateData(null);
+			invalidateDisplayList();
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<util:RingHelper id="ringHelper" blankSpacing="6" />
+	</fx:Declarations>
+	<s:states>
+		<s:State name="selected" />
+		<s:State name="highlighted" />
+		<s:State name="normal" />
+	</s:states>
+	<s:VGroup width="100%" height="100%"
+			  horizontalAlign="center" verticalAlign="middle"
+			  includeInLayout="{_includeSummary}"
+			  gap="0" visible="{_includeSummary}"
+			  >
+		<s:Label fontSize="{labelFontSize}"
+				 includeInLayout="{_includeLabel}" text="{_cluster.label}"
+				 visible="{_includeLabel}"
+				 />
+		<s:DataGroup width="100%"
+					 dataProvider="{_airportsList}" includeInLayout="{_includePictogram}"
+					 itemRenderer="fr.kapit.lab.demo.renderer.components.AirportImageRenderer"
+					 visible="{_includePictogram}"
+					 >
+			<s:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"
+									gap="3"
+									/>
+			</s:layout>
+		</s:DataGroup>
+	</s:VGroup>
+</s:Group>

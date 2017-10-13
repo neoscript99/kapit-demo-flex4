@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:TemplateDemoContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+								  xmlns:s="library://ns.adobe.com/flex/spark"
+								  xmlns:mx="library://ns.adobe.com/flex/mx"
+								  xmlns:common="fr.kapit.lab.demo.common.*"
+								  xmlns:components="fr.kapit.lab.demo.common.components.*"
+								  xmlns:treemap="fr.kapit.components.treemap.*"
+								  title="Tree Map Demo"
+								  openOptions="true"
+								  creationComplete="initializeTreeMap()"
+								  >
+
+	<fx:Declarations>
+		<s:ArrayList id="hierarchyCollection">
+			<fx:Object label="Country" value="['@name']" />
+			<fx:Object label="Continent" value="['@continent']" />
+			<fx:Object label="Region" value="['@region']" />
+			<fx:Object label="Continent&gt;Region" value="['@continent', '@region']" />
+			<fx:Object label="Continent&gt;Region&gt;Country" value="['@continent', '@region', '@name']" />
+		</s:ArrayList>
+		<s:ArrayList id="hierarchyCollectionNewsMap">
+			<fx:Object label="Category" value="['@category']" />
+			<fx:Object label="Title" value="['@title']" />
+			<fx:Object label="Category&gt;Title" value="['@category', '@title']" />
+		</s:ArrayList>
+		<s:ArrayList id="areaCollection">
+			<fx:Object label="Area" value="@area" />
+			<fx:Object label="Population" value="@population" />
+			<fx:Object label="Population Growth" value="@population_growth" />
+			<fx:Object label="Infant Mortality" value="@infant_mortality" />
+			<fx:Object label="GDP Total" value="@gdp_total" />
+			<fx:Object label="Inflation" value="@inflation" />
+		</s:ArrayList>
+		<s:ArrayList id="areaCollectionNewsMap">
+			<fx:Object label="Diggs" value="@diggs" />
+			<fx:Object label="Comments" value="@comments" />
+		</s:ArrayList>
+		<s:ArrayList id="colorCollection">
+			<fx:Object label="Continent" value="@continent" />
+			<fx:Object label="Area" value="@area" />
+			<fx:Object label="Population" value="@population" />
+			<fx:Object label="Population Growth" value="@population_growth" />
+			<fx:Object label="Infant Mortality" value="@infant_mortality" />
+			<fx:Object label="GDP Total" value="@gdp_total" />
+			<fx:Object label="Inflation" value="@inflation" />
+		</s:ArrayList>
+		<s:ArrayList id="colorPolicyCollection">
+			<fx:Object label="Monochromatic" value="{TreeMap.COLOR_POLICY_MONOCHROMATIC}" />
+			<fx:Object label="Bichromatic" value="{TreeMap.COLOR_POLICY_BICHROMATIC}" />
+			<fx:Object label="Spectrum" value="{TreeMap.COLOR_POLICY_SPECTRUM}" />
+		</s:ArrayList>
+		<s:ArrayList id="highlightPolicyCollection">
+			<fx:Object label="All" value="{TreeMap.HIGHLIGHT_POLICY_ALL}" />
+			<fx:Object label="Groups" value="{TreeMap.HIGHLIGHT_POLICY_GROUPS}" />
+			<fx:Object label="Nodes" value="{TreeMap.HIGHLIGHT_POLICY_NODES}" />
+			<fx:Object label="None" value="{TreeMap.HIGHLIGHT_POLICY_NONE}" />
+		</s:ArrayList>
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.components.treemap.BranchInfo;
+		import fr.kapit.components.treemap.ITreeMapInfo;
+		
+		import mx.events.ColorPickerEvent;
+		
+		import spark.events.IndexChangeEvent;
+
+		//--------------------------------------
+		//  Datas
+		//--------------------------------------
+
+		[Embed(source="fr/kapit/lab/demo/common/assets/xml/world.xml", mimeType="application/octet-stream")]
+		private var worldXML:Class;
+
+		[Embed(source="/fr/kapit/lab/demo/treemap/assets/xml/stories.xml", mimeType="application/octet-stream")]
+		private var newsXML:Class;
+
+		//--------------------------------------
+		//  Properties
+		//--------------------------------------
+
+		[Bindable] protected var newsMap:Boolean = false;
+
+		[Bindable] private var _treeMapXML:XML = null;
+
+		private function initializeTreeMap():void
+		{
+			var ba:ByteArray = (newsMap ? new newsXML() : new worldXML()) as ByteArray;
+			_treeMapXML = new XML(ba.readUTFBytes(ba.length));
+			ba = null;
+
+			resetTreeMap();
+			resetOptions();
+		}
+
+		private function resetTreeMap():void
+		{
+			if (newsMap)
+			{
+				treeMap.areaField = "@diggs";
+				treeMap.colorField = "@category";
+				treeMap.filterPath = ["@category", "@title"];
+				treeMap.toolTipField = "@description";
+			}
+			else
+			{
+				treeMap.areaField = "@area";
+				treeMap.colorField = "@population";
+				treeMap.filterPath = ["@continent", "@region", "@name"];
+				treeMap.toolTipField = "id";
+			}
+
+			treeMap.refresh();
+		}
+
+		private function resetOptions():void
+		{
+			areaDropDL.selectedIndex = 0;
+			areaDropDL.dispatchEvent(new IndexChangeEvent(IndexChangeEvent.CHANGE));
+			hierarchyDropDL.selectedIndex = newsMap ? 2 : 4;
+			hierarchyDropDL.dispatchEvent(new IndexChangeEvent(IndexChangeEvent.CHANGE));
+			colorPolicyDropDL.selectedIndex = 2;
+			colorPolicyDropDL.dispatchEvent(new IndexChangeEvent(IndexChangeEvent.CHANGE));
+			if (!newsMap)
+			{
+				colorDropDL.selectedIndex = 2;
+				colorDropDL.dispatchEvent(new IndexChangeEvent(IndexChangeEvent.CHANGE));
+			}
+		}
+
+		private function treeMap_toolTipFunction(data:Object, info:ITreeMapInfo):String
+		{
+
+			if (!displayTooltipsCheckBox.selected)
+				return null;
+
+			if (newsMap)
+				return info.isGroup ? "<b>" + data["@category"] + "</b><br><b>Number of news:</b> " + (info as BranchInfo).allChildNodesCount : "<b>Description:</b><br>" + data[treeMap.toolTipField];
+			else if (info.isGroup)
+				return "<b>" + data[treeMap.toolTipField] + '</b><br><b>Number of countries:</b> '
+					+ (info as BranchInfo).allChildNodesCount + "<br>This area represents " + Number(info.area * 100).toFixed(2)
+					+ "% of the total area.";
+			
+			return  "<b>" + data[treeMap.toolTipField] + "</b> (" + data["@region"] + ")<br><br><b>Area:</b> " + data["@area"]
+				+ "<br><b>Population:</b> " + data["@population"] + "<br><b>Population Growth:</b> " + data["@population_growth"]
+				+ "<br><b>Infant Mortality:</b> " + data["@infant_mortality"] + "<br><b>GDP Total:</b> " + data["@gdp_total"]
+				+ "<br><b>Inflation:</b> " + data["@inflation"];
+		}
+
+		//--------------------------------------
+		//  Options handlers
+		//--------------------------------------
+
+		protected function sourcesButtonBar_changeHandler(event:IndexChangeEvent):void
+		{
+			newsMap = (sourcesButtonBar.selectedIndex === 1);
+			initializeTreeMap();
+		}
+
+		protected function hierarchyDropDL_changeHandler(event:IndexChangeEvent):void
+		{
+			treeMap.filterPath = hierarchyDropDL.selectedItem.value as Array;
+		}
+
+		protected function areaDropDL_changeHandler(event:IndexChangeEvent):void
+		{
+			treeMap.areaField = String(areaDropDL.selectedItem.value);
+		}
+
+		protected function colorDropDL_changeHandler(event:IndexChangeEvent):void
+		{
+			treeMap.colorField = String(colorDropDL.selectedItem.value);
+		}
+
+		protected function colorPolicyDropDL_changeHandler(event:IndexChangeEvent):void
+		{
+			treeMap.colorPolicy = String(colorPolicyDropDL.selectedItem.value);
+			if (event.newIndex == 0)
+				firstColorCP.selectedColor = 0xCC0000;
+			else if (event.newIndex == 1)
+			{
+				firstColorCP.selectedColor = 0xFCE406;
+				secondColorCP.selectedColor = 0x990000;
+			}
+		}
+
+		protected function highlightPolicyDropDL_changeHandler(event:IndexChangeEvent):void
+		{
+			treeMap.highlightPolicy = highlightPolicyDropDL.selectedItem.value;
+		}
+
+		protected function displayTooltipsCheckBox_changeHandler(event:Event):void
+		{
+			treeMap.toolTipField = displayTooltipsCheckBox.selected ? (newsMap ? "@description" : "id") : null;
+		}
+
+		protected function showTextCheckBox_changeHandler(event:Event):void
+		{
+			treeMap.labelPolicy = showTextCheckBox.selected ? TreeMap.LABEL_POLICY_ALL : TreeMap.LABEL_POLICY_GROUPS;
+		}
+	]]>
+	</fx:Script>
+
+	<components:headerContent>
+		<s:ButtonBar id="sourcesButtonBar"
+					 requireSelection="true" horizontalCenter="3" verticalCenter="0"
+					 change="sourcesButtonBar_changeHandler(event)">
+			<s:ArrayList>
+				<s:ButtonBarButton width="80" label="World map" />
+				<s:ButtonBarButton width="80" label="News map" />
+			</s:ArrayList>
+		</s:ButtonBar>
+	</components:headerContent>
+
+	<components:optionsContent>
+<!--
+		GLOBAL PARAMETERS :
+-->
+		<components:OptionsPanel title="Global Parameters" width="100%">
+			<!-- Hierarchy levels -->
+			<components:OptionElement title="Hierarchy levels:">
+				<s:DropDownList id="hierarchyDropDL" width="100%"
+								buttonMode="true" requireSelection="true"
+								dataProvider="{newsMap ? hierarchyCollectionNewsMap : hierarchyCollection}"
+								change="hierarchyDropDL_changeHandler(event)"
+								/>
+			</components:OptionElement>
+			<!-- Area meaning -->
+			<components:OptionElement title="Area meaning:">
+				<s:DropDownList id="areaDropDL" width="120"
+								buttonMode="true" requireSelection="true"
+								dataProvider="{newsMap ? areaCollectionNewsMap : areaCollection}"
+								change="areaDropDL_changeHandler(event)"
+								/>
+			</components:OptionElement>
+			<!-- Color meaning -->
+			<components:OptionElement title="Color meaning:" visible="{!newsMap}" includeInLayout="{!newsMap}">
+				<s:DropDownList id="colorDropDL" width="120"
+								buttonMode="true" requireSelection="true"
+								dataProvider="{colorCollection}"
+								change="colorDropDL_changeHandler(event)"
+								/>
+			</components:OptionElement>
+			<!-- Highlight policy -->
+			<components:OptionElement title="Highlight policy:">
+				<s:DropDownList id="highlightPolicyDropDL" width="120"
+								buttonMode="true" requireSelection="true"
+								dataProvider="{highlightPolicyCollection}"
+								change="highlightPolicyDropDL_changeHandler(event)"
+								/>
+			</components:OptionElement>
+			<common:HRule />
+			<!-- Display tooltips -->
+			<s:Group>
+				<s:CheckBox id="displayTooltipsCheckBox"
+							label="Display Tooltips" left="9"
+							selected="true" buttonMode="true"
+							change="displayTooltipsCheckBox_changeHandler(event)"
+							/>
+			</s:Group>
+		</components:OptionsPanel>
+<!--
+		BRANCHES OPTIONS :
+-->
+		<components:OptionsPanel title="Branches" width="100%">
+			<!-- Coloration by level -->
+			<components:OptionElement title="Coloration by level:">
+				<components:layout>
+					<s:HorizontalLayout gap="9" />
+				</components:layout>
+				<components:ColorPicker id="firstColorationCP"
+										buttonMode="true" selectedColor="0x333333"
+										/>
+				<components:ColorPicker id="secondColorationCP"
+										buttonMode="true" selectedColor="0x666666"
+										/>
+			</components:OptionElement>
+			<!-- Distance between branches -->
+			<components:OptionElement title="Distance between branches:">
+				<components:NumericStepper id="distanceBwBranchesNS"
+										   minimum="0" maximum="50" stepSize="1" value="0"
+										   />
+			</components:OptionElement>
+			<common:HRule />
+			<!-- Show branch headers -->
+			<s:Group>
+				<s:CheckBox id="showBranchHeaderCheckBox"
+							label="Show branch headers" left="9"
+							selected="true" buttonMode="true"
+							/>
+			</s:Group>
+			<!-- Header height -->
+			<components:OptionElement title="Header height:" enabled="{showBranchHeaderCheckBox.selected}">
+				<components:NumericStepper id="headerHeightNS"
+										   minimum="16" maximum="50" stepSize="1" value="26"
+								  		   />
+			</components:OptionElement>
+			<!-- Header vertical align -->
+			<components:OptionElement title="Header vertical align:" enabled="{showBranchHeaderCheckBox.selected}">
+				<s:DropDownList id="headerVerticalAlignDropDL"
+								requireSelection="true" buttonMode="true" selectedIndex="1"
+								>
+					<s:ArrayList>
+						<fx:String>top</fx:String>
+						<fx:String>middle</fx:String>
+						<fx:String>bottom</fx:String>
+					</s:ArrayList>
+				</s:DropDownList>
+			</components:OptionElement>
+			<!-- Header text color -->
+			<components:OptionElement title="Header text color:" enabled="{showBranchHeaderCheckBox.selected}">
+				<components:layout>
+					<s:HorizontalLayout gap="9" />
+				</components:layout>
+				<components:ColorPicker id="firstHeaderTextColorCP"
+										buttonMode="true" selectedColor="0xFFFFFF"
+										/>
+				<components:ColorPicker id="secondHeaderTextColorCP"
+										buttonMode="true" selectedColor="0xFFFFFF"
+										/>
+			</components:OptionElement>
+		</components:OptionsPanel>
+<!--
+		LEAF NODES OPTIONS :
+-->
+		<components:OptionsPanel title="Leaf Nodes" width="100%">
+			<!-- Color policy -->
+			<s:HGroup gap="2">
+				<components:OptionElement title="Color policy:" paddingRight="0">
+					<s:DropDownList id="colorPolicyDropDL" width="120"
+									buttonMode="true" requireSelection="true" selectedIndex="2"
+									dataProvider="{colorPolicyCollection}"
+									change="colorPolicyDropDL_changeHandler(event)"
+									/>
+				</components:OptionElement>
+				<s:VGroup gap="4" visible="{colorPolicyDropDL.selectedIndex &lt; 2}">
+					<s:Label text="Max:" fontFamily="Calibri" />
+					<components:ColorPicker id="firstColorCP"
+											buttonMode="true" selectedColor="0xFCE406"
+											/>
+				</s:VGroup>
+				<s:VGroup gap="4" visible="{colorPolicyDropDL.selectedIndex == 1}">
+					<s:Label text="Min:" fontFamily="Calibri" />
+					<components:ColorPicker id="secondColorCP"
+											buttonMode="true" selectedColor="0x990000"
+											/>
+				</s:VGroup>
+			</s:HGroup>
+			<!-- Enable gradients -->
+			<s:Group>
+				<s:CheckBox id="enableGradientsCheckBox"
+							label="Enable gradients" left="9"
+							buttonMode="true"
+							/>
+			</s:Group>
+			<!-- Logarithmic scale -->
+			<s:Group>
+				<s:CheckBox id="logarithmicScaleCheckBox"
+							label="Use color logarithmic scale" left="9"
+							buttonMode="true" selected="true"
+							/>
+			</s:Group>
+			<common:HRule />
+			<!-- Show text -->
+			<s:Group>
+				<s:CheckBox id="showTextCheckBox"
+							label="Show text" left="9"
+							buttonMode="true" selected="true"
+							change="showTextCheckBox_changeHandler(event)"
+							/>
+			</s:Group>
+			<!-- Text color -->
+			<components:OptionElement title="Text color:" enabled="{showTextCheckBox.selected}">
+				<components:ColorPicker id="textColorCP"
+										buttonMode="true" selectedColor="0xFFFFFF"
+										/>
+			</components:OptionElement>
+			<!-- Dynamic font size -->
+			<s:Group>
+				<s:CheckBox id="dynamicFontSizeCheckBox"
+							label="Dynamic font size" left="9"
+							buttonMode="true" selected="true"
+							enabled="{showTextCheckBox.selected}"
+							/>
+			</s:Group>
+		</components:OptionsPanel>
+		<components:OptionsPanel title="Tools" width="100%">
+			<s:VGroup paddingLeft="9" gap="11">
+				<!-- Display Legend -->
+				<s:CheckBox id="displayLegendCheckBox"
+							label="Display legend"
+							selected="true" buttonMode="true"
+							/>
+				<!-- Display Filters -->
+				<s:CheckBox id="displayFiltersCheckBox"
+							label="Display filters"
+							selected="true" buttonMode="true"
+							/>
+			</s:VGroup>
+		</components:OptionsPanel>
+	</components:optionsContent>
+
+	<s:VGroup gap="0" top="0" left="0" right="0" bottom="0">
+		<s:HGroup gap="0" width="100%" height="65"
+				  visible="{displayFiltersCheckBox.selected}"
+				  includeInLayout="{displayFiltersCheckBox.selected}">
+			<s:Rect width="100%" height="100%" includeInLayout="false">
+				<s:fill>
+					<s:SolidColor color="0xF2F2F2" />
+				</s:fill>
+			</s:Rect>
+			<s:VGroup width="100%" height="100%" gap="0" visible="{!newsMap}" includeInLayout="{!newsMap}">
+				<s:Label text="{colorDropDL.selectedItem.label}" fontFamily="Calibri" fontWeight="bold" paddingTop="10" paddingLeft="15" />
+				<treemap:TreeMapColorFilter id="treeMapColorFilter"
+											width="100%"
+											treeMap="{treeMap}"
+										    bigTicksNumber="5" bigTickLength="6" tinyTicksNumber="0"
+											textOffset="3"
+											rightThumbDirection="UP_DIR"
+											leftThumbDirection="UP_DIR"
+											thumbRenderer="fr.kapit.lab.demo.treemap.components.TreeMapLegendThumb"
+											/>
+			</s:VGroup>
+			<s:Rect width="1" height="100%" visible="{!newsMap}" includeInLayout="{!newsMap}">
+				<s:fill>
+					<s:SolidColor color="0x9E9E9E" />
+				</s:fill>
+			</s:Rect>
+			<s:VGroup width="100%" height="100%" gap="0">
+				<s:Label text="{areaDropDL.selectedItem.label}" fontFamily="Calibri" fontWeight="bold" paddingTop="10" paddingLeft="15" />
+				<treemap:TreeMapAreaFilter id="treeMapAreaFilter"
+										   width="100%"
+										   treeMap="{treeMap}"
+										   bigTicksNumber="5" bigTickLength="6" tinyTicksNumber="0"
+										   textOffset="3"
+										   rightThumbDirection="UP_DIR"
+										   leftThumbDirection="UP_DIR"
+										   thumbRenderer="fr.kapit.lab.demo.treemap.components.TreeMapLegendThumb"
+										   />
+			</s:VGroup>
+		</s:HGroup>
+
+		<s:Rect width="100%" height="1">
+			<s:fill>
+				<s:SolidColor color="0x9E9E9E" />
+			</s:fill>
+		</s:Rect>
+
+		<treemap:TreeMap id="treeMap"
+						 width="100%" height="100%"
+						 dataProvider="{_treeMapXML}" enabled="false"
+						 applyGradientFill="{enableGradientsCheckBox.selected}"
+						 branchColors="{[firstColorationCP.selectedColor, secondColorationCP.selectedColor]}"
+						 branchHeaderHeight="{headerHeightNS.value}"
+						 branchHeaderVerticalAlign="{String(headerVerticalAlignDropDL.selectedItem)}"
+						 branchTextColors="{[firstHeaderTextColorCP.selectedColor, secondHeaderTextColorCP.selectedColor]}"
+						 branchToolTip="fr.kapit.lab.demo.treemap.components.TreeMapToolTip"
+						 distanceBetweenBranches="{distanceBwBranchesNS.value}"
+						 dynamicTextSize="{dynamicFontSizeCheckBox.selected}"
+						 firstColor="{firstColorCP.selectedColor}"
+						 secondColor="{secondColorCP.selectedColor}"
+						 labelPolicy="all"
+						 labelField="id"
+						 nodeToolTip="fr.kapit.lab.demo.treemap.components.TreeMapToolTip"
+						 highlightPolicy="all"
+						 nodeTextColor="{textColorCP.selectedColor}"
+						 toolTipFunction="treeMap_toolTipFunction"
+						 useLogarithmicScale="{logarithmicScaleCheckBox.selected}"
+						 viewBranchHeader="{showBranchHeaderCheckBox.selected}"
+						 />
+
+		<s:Rect width="100%" height="1">
+			<s:fill>
+				<s:SolidColor color="0x9E9E9E" />
+			</s:fill>
+		</s:Rect>
+
+		<s:Group width="100%" height="65"
+				 visible="{displayLegendCheckBox.selected}"
+				 includeInLayout="{displayLegendCheckBox.selected}">
+			<s:Rect top="0" bottom="0" left="0" right="0">
+				<s:fill>
+					<s:SolidColor color="0xF2F2F2" />
+				</s:fill>
+			</s:Rect>
+			<s:Label text="Legend:" fontFamily="Calibri" fontWeight="bold" paddingTop="7" paddingLeft="15" />
+			<treemap:TreeMapLegend id="treeMapLegend"
+								   treeMap="{treeMap}"
+								   width="100%" top="12"
+								   outerBorderAlpha="0"
+								   textOffset="3"
+								   thumbRenderer="fr.kapit.lab.demo.treemap.components.TreeMapLegendThumb"
+								   />
+		</s:Group>
+	</s:VGroup>
+
+</components:TemplateDemoContainer>

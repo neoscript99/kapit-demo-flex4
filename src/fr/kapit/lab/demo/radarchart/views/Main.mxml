@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:TemplateDemoContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+								  xmlns:s="library://ns.adobe.com/flex/spark"
+								  xmlns:mx="library://ns.adobe.com/flex/mx"
+								  xmlns:common="fr.kapit.lab.demo.common.*"
+								  xmlns:components="fr.kapit.lab.demo.common.components.*"
+								  xmlns:radarchart="fr.kapit.radarchart.*"
+								  title="Radar Chart Demo"
+								  openOptions="true"
+								  creationComplete="initializeRadarChart()"
+								  >
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.radarchart.components.CustomToolTip;
+		import fr.kapit.lab.demo.radarchart.utils.ColorUtil;
+		import fr.kapit.radarchart.RadarChartAxis;
+		import fr.kapit.radarchart.RadarChartSeries;
+		
+		import mx.collections.ArrayCollection;
+		import mx.collections.ArrayList;
+		import mx.events.CollectionEvent;
+		
+		import spark.events.IndexChangeEvent;
+		import spark.events.ListEvent;
+
+		[Embed(source="fr/kapit/lab/demo/common/assets/images/arrowIcon.png")]
+		[Bindable] public var arrowIcon:Class;
+
+		//--------------------------------------
+		//  Datas
+		//--------------------------------------
+
+		[Embed(source="fr/kapit/lab/demo/common/assets/xml/world.xml", mimeType="application/octet-stream")]
+		private var worldXML:Class;
+
+		//--------------------------------------
+		//  Properties
+		//--------------------------------------
+
+		[Bindable] private var _indices:Vector.<int>;
+
+		[Bindable] private var _seriesType:String = RadarChart.AREA_SERIES;
+
+		[Bindable] private var _axisArray:Array;
+		[Bindable] private var _axisTextFormat:TextFormat;
+
+		private const _axisNames:Array = ["growth", "population", "area", "inflation", "infantMortality", "gdp"];
+		private const _axisClassifiers:Array = [" (%)", null, null, " (%)", " (per 1000 live births)", null];
+
+		private var _axisNamesSorted:Array;
+
+		private function initializeRadarChart():void
+		{
+			var ba:ByteArray = new worldXML() as ByteArray;
+			var xmlList:XMLList = new XML(ba.readUTFBytes(ba.length)).elements();
+			ba = null;
+
+			var source:Array = [];
+			var xml:XML;
+			for each (xml in xmlList)
+			{
+				source.push({
+					name: xml.@name,
+					gdp: xml.@gdp_total,
+					area: xml.@area,
+					population: xml.@population,
+					growth: xml.@population_growth,
+					inflation: xml.@inflation,
+					infantMortality: xml.@infant_mortality
+				});
+			}
+
+			initializeFilters(source);
+			source = null;
+
+			_indices = new Vector.<int>;
+			_indices.push(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+			updateSeries();
+
+			_axisTextFormat = new TextFormat("Calibri", 12, 0x333333);
+
+			const lg:uint = _axisNames.length;
+			var tmpAxisArray:Array = [];
+			var rca:RadarChartAxis;
+			var i:uint;
+			while (i++ < lg)
+			{
+				rca = new RadarChartAxis;
+				rca.name = _axisNames[i - 1];
+				rca.classifier = _axisClassifiers[i - 1];
+				tmpAxisArray.push(rca);
+			}
+			_axisArray = tmpAxisArray;
+			radarChart.axes = _axisArray;
+			tmpAxisArray = null;
+		}
+
+		private function initializeFilters(value:Array):void
+		{
+			value.sortOn("name");
+
+			var source:Array = [];
+
+			var item:Object;
+			for each (item in value)
+			{
+				source.push({
+					name: item.name,
+					gdp: item.gdp,
+					area: item.area,
+					population: item.population,
+					growth: item.growth,
+					inflation: item.inflation,
+					infantMortality: item.infantMortality
+				});
+			}
+			filtersList.dataProvider = new ArrayList(source);
+			source = null;
+		}
+
+		protected function filtersList_changeHandler(event:IndexChangeEvent):void
+		{
+			if (!filtersList.selectedIndices.length)
+				return;
+
+			_indices = filtersList.selectedIndices;
+			updateSeries();
+		}
+
+		protected function useSortFunctionCheckBox_changeHandler(event:Event):void
+		{
+			radarChart.axisSortFunction = useSortFunctionCheckBox.selected ? radarChart_axisSortFunction : axisSortFunction;
+			updateSeries();
+		}
+		
+		private var _currentSeries:Object;
+
+		private function updateSeries():void
+		{
+			radarChart.series = [];
+			_currentSeries = {};
+			var series:RadarChartSeries;
+			var array:Array = [];
+			var item:Object;
+			var i:int;
+			var newDataProvider:ArrayCollection = new ArrayCollection();
+			var colors:Vector.<uint> = ColorUtil.getColors(_indices.length);
+			_indices.sort(Array.NUMERIC);
+			for each (i in _indices)
+			{
+				item = filtersList.dataProvider.getItemAt(i);
+				series = new RadarChartSeries;
+				series.name = item.name;
+				series.color = colors.shift();
+				array.push(series);
+				_currentSeries[series.name] = series;
+				item.color = series.color;
+				newDataProvider.addItem(item);
+				filtersList.dataProvider.itemUpdated(item, "color");
+			}
+			radarChart.dataProvider = newDataProvider;
+			radarChart.series = array;
+			radarChart.axes = _axisArray;
+		}
+
+		private function axisSortFunction(axisName:String, sorted:Boolean=false):Number
+		{
+			if (!radarChart.axes)
+				return NaN;
+
+			if (!_axisNamesSorted)
+			{
+				_axisNamesSorted = _axisNames.concat();
+				_axisNamesSorted.sort();
+			}
+
+			var pos:int = sorted ? _axisNamesSorted.indexOf(axisName) : _axisNames.indexOf(axisName);
+			return pos != -1 ? pos : NaN;
+		}
+
+		private function radarChart_axisSortFunction(axisName:String,axis:Object):Number
+		{
+			return axisSortFunction(axisName, true);
+		}
+
+		private function axisLabelFunction(axisName:String,axis:Object):String
+		{
+			if (axisName == "name")
+				return "Name";
+			else if (axisName == "gdp")
+				return "GDP";
+			else if (axisName == "area")
+				return "Area";
+			else if (axisName == "population")
+				return "Population";
+			else if (axisName == "growth")
+				return "Growth";
+			else if (axisName == "inflation")
+				return "Inflation";
+			else if (axisName == "infantMortality")
+				return "Infant Mortality";
+
+			return "";
+		}
+
+		private function updateSeriesType():void
+		{
+			if (displaySeriesCheckBox.selected)
+				_seriesType = displayFillCheckBox.selected ? RadarChart.AREA_SERIES : RadarChart.LINE_SERIES;
+			else
+				_seriesType = RadarChart.POINT_SERIES;
+		}
+
+		protected function filtersList_itemRollOverHandler(event:ListEvent):void
+		{
+			radarChart.exclusiveSelectedSeries = event.itemRenderer.selected ? _currentSeries[event.item.name] : null;
+		}
+	]]>
+	</fx:Script>
+
+	<components:optionsContent>
+<!--
+		GRID :
+-->
+		<components:OptionsPanel title="Grid" width="100%">
+			<!-- Display grid -->
+			<s:Group>
+				<s:CheckBox id="displayGridCheckBox"
+							label="Display Grid" left="9"
+							selected="true" buttonMode="true"
+							/>
+			</s:Group>
+			<!-- Grid color -->
+			<components:OptionElement title="Grid color:" enabled="{displayGridCheckBox.selected}">
+				<components:ColorPicker id="gridColorCP"
+										selectedColor="0xCCCCCC"
+										/>
+			</components:OptionElement>
+			<!-- Grid thickness -->
+			<components:OptionElement title="Grid thickness:" enabled="{displayGridCheckBox.selected}">
+				<components:HRangeSlider id="gridThicknessSlider"
+									     minimum="1" maximum="10" stepSize="1" value="1"
+									     width="190" tickNumber="10"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+									     />
+			</components:OptionElement>
+			<!-- Grid opacity -->
+			<components:OptionElement title="Grid opacity:" enabled="{displayGridCheckBox.selected}">
+				<components:HRangeSlider id="gridOpacitySlider"
+									     minimum="0" maximum="1" stepSize="0.1" value="0.60"
+									     width="190" tickNumber="11"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+									     />
+			</components:OptionElement>
+		</components:OptionsPanel>
+<!--
+		AXIS :
+-->
+		<components:OptionsPanel title="Axis" width="100%">
+			<!-- Axis thickness -->
+			<components:OptionElement title="Axis thickness:">
+				<components:HRangeSlider id="axisThicknessSlider"
+										 minimum="1" maximum="10" stepSize="1" value="2"
+										 width="190" tickNumber="10"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+										 />
+			</components:OptionElement>
+			<!-- Axis opacity -->
+			<components:OptionElement title="Axis opacity:">
+				<components:HRangeSlider id="axisOpacitySlider"
+										 minimum="0" maximum="1" stepSize="0.1" value="1"
+										 width="190" tickNumber="11"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+										 />
+			</components:OptionElement>
+			<common:HRule />
+			<!-- Display graduations -->
+			<s:Group>
+				<s:CheckBox id="displayGraduationsCheckBox"
+							label="Display Graduations" left="9"
+							selected="true" buttonMode="true"
+							/>
+			</s:Group>
+			<!-- Number of divisions -->
+			<components:OptionElement title="Number of divisions:" enabled="{displayGraduationsCheckBox.selected}">
+				<components:HRangeSlider id="numberOfDivisionsSlider"
+										 minimum="3" maximum="10" stepSize="1" value="4"
+										 width="190" tickNumber="8"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+										 />
+			</components:OptionElement>
+			<!-- Display arrows -->
+			<s:Group>
+				<s:CheckBox id="displayArrowsCheckBox"
+							label="Display Arrows" left="9"
+							selected="true" buttonMode="true"
+							/>
+			</s:Group>
+			<common:HRule />
+			<!-- Use sort function to place axis -->
+			<s:Group>
+				<s:CheckBox id="useSortFunctionCheckBox"
+							label="Use sort function to place axis" left="9"
+							selected="true" buttonMode="true"
+							change="useSortFunctionCheckBox_changeHandler(event)"
+							/>
+			</s:Group>
+		</components:OptionsPanel>
+<!--
+		SERIES :
+-->
+		<components:OptionsPanel title="Series" width="100%">
+			<!-- Display series -->
+			<s:Group>
+				<s:CheckBox id="displaySeriesCheckBox"
+							label="Display Series" left="9"
+							selected="true" buttonMode="true"
+							change="updateSeriesType()"
+							/>
+			</s:Group>
+			<!-- Series width -->
+			<components:OptionElement title="Series width:" enabled="{displaySeriesCheckBox.selected}">
+				<components:NumericStepper id="seriesWidthNS"
+										   minimum="1" maximum="5" stepSize="1" value="1"
+										   />
+			</components:OptionElement>
+			<!-- Series opacity -->
+			<components:OptionElement title="Series opacity:" enabled="{displaySeriesCheckBox.selected}">
+				<components:HRangeSlider id="seriesOpacitySlider"
+										 minimum="0" maximum="1" stepSize="0.1" value="1"
+										 width="190" tickNumber="11"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+										 />
+			</components:OptionElement>
+			<common:HRule />
+			<!-- Display fill -->
+			<s:Group enabled="{displaySeriesCheckBox.selected &amp;&amp; displaySeriesCheckBox.selected}">
+				<s:CheckBox id="displayFillCheckBox"
+							label="Display Fill" left="9"
+							selected="true" buttonMode="true"
+							change="updateSeriesType()"
+							/>
+			</s:Group>
+			<!-- Fill opacity -->
+			<components:OptionElement title="Fill opacity:" enabled="{displaySeriesCheckBox.selected &amp;&amp; displayFillCheckBox.selected}">
+				<components:HRangeSlider id="fillOpacitySlider"
+										 minimum="0" maximum="1" stepSize="0.1" value="0.2"
+										 width="190" tickNumber="11"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+										 />
+			</components:OptionElement>
+			<common:HRule />
+			<!-- Enable curved lines -->
+			<s:Group>
+				<s:CheckBox id="enableCurvedLinesCheckBox"
+							label="Enable Curved Lines" left="9"
+							selected="true" buttonMode="true"
+							/>
+			</s:Group>
+			<!-- Curve value opacity -->
+			<components:OptionElement title="Curve value:" enabled="{enableCurvedLinesCheckBox.selected}">
+				<components:HRangeSlider id="curveValueSlider"
+										 minimum="0" maximum="1" stepSize="0.1" value="0.2"
+										 width="190" tickNumber="11"
+										 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+										 />
+			</components:OptionElement>
+			<!-- Use Custom Tooltips -->
+			<s:Group>
+				<s:CheckBox id="useCustomTooltipsCheckBox"
+							label="Use Custom Tooltips" left="9"
+							buttonMode="true" selected="true"
+							/>
+			</s:Group>
+			<!-- Draggable points -->
+			<s:Group>
+				<s:CheckBox id="draggablePointsCheckBox"
+							label="Draggable Points" left="9"
+							buttonMode="true"
+							/>
+			</s:Group>
+		</components:OptionsPanel>
+
+	</components:optionsContent>
+
+	<s:Rect top="0" left="0" right="0" bottom="0">
+		<s:fill>
+			<s:SolidColor color="0xFCFCFC" />
+		</s:fill>
+	</s:Rect>
+
+	<s:HGroup id="content" gap="0" top="0" left="0" right="0" bottom="0" verticalAlign="middle">
+
+		<radarchart:RadarChart id="radarChart"
+							   width="100%" height="90%"
+							   seriesField="name"
+							   arrowIcon="{arrowIcon}"
+							   axisNameTextFormat="{_axisTextFormat}"
+							   axisSortFunction="radarChart_axisSortFunction"
+							   axisLabelFunction="axisLabelFunction"
+							   axisAlpha="{axisOpacitySlider.value}"
+							   axisColor="{gridColorCP.selectedColor}"
+							   axisWidth="{axisThicknessSlider.value}"
+							   curvature="{curveValueSlider.value}"
+							   toolTipRenderer="{useCustomTooltipsCheckBox.selected ? new ClassFactory(CustomToolTip) : null}"
+							   divisions="{numberOfDivisionsSlider.value}"
+							   enablePointDrag="{draggablePointsCheckBox.selected}"
+							   gridAlpha="{gridOpacitySlider.value}"
+							   gridWidth="{gridThicknessSlider.value}"
+							   lineType="{enableCurvedLinesCheckBox.selected ? RadarChart.CURVE : RadarChart.LINE}"
+							   seriesAlpha="{seriesOpacitySlider.value}"
+							   seriesFillAlpha="{fillOpacitySlider.value}"
+							   seriesWidth="{seriesWidthNS.value}"
+							   multipleTooltip="false"
+							   seriestype="{_seriesType}"
+							   showAxesArrow="{displayArrowsCheckBox.selected}"
+							   showGraduations="{displayGraduationsCheckBox.selected}"
+							   showGrid="{displayGridCheckBox.selected}"
+							   />
+
+		<s:List id="filtersList"
+				width="160" height="100%"
+				skinClass="fr.kapit.lab.demo.radarchart.skins.FiltersListSkin"
+				allowMultipleSelection="true" requireSelection="true"
+				labelField="name"
+				selectedIndices="{_indices}"
+				change="filtersList_changeHandler(event)"
+				itemRollOver="filtersList_itemRollOverHandler(event)"
+				itemRollOut="radarChart.exclusiveSelectedSeries = null"
+				/>
+
+	</s:HGroup>
+
+</components:TemplateDemoContainer>

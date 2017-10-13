@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="fr.kapit.components.treemap.ui.ITreeMapToolTip"
+		 mouseChildren="false" mouseEnabled="false"
+		 minWidth="80" minHeight="40"
+		 >
+	
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.components.treemap.ITreeMapInfo;
+		
+		[Bindable] private var _text:String;
+		
+		private var _info:ITreeMapInfo;
+		
+		private var _data:Object;
+		
+		public function get info():ITreeMapInfo
+		{
+			return _info;
+		}
+		public function set info(value:ITreeMapInfo):void
+		{
+			_info = value;
+		}
+
+		public function get data():Object
+		{
+			return _data;
+		}
+		public function set data(value:Object):void
+		{
+			_data = value;
+		}
+		
+		public function get text():String {
+			return _text;
+		}
+		
+		public function set text(value:String):void {
+			_text = value;
+		}
+	]]>
+	</fx:Script>
+	
+	<s:Group id="content">
+		<s:Rect  left="0" right="0" top="0" bottom="0" radiusX="3" radiusY="3">
+			<s:fill>
+				<s:SolidColor color="0x404040" />
+			</s:fill>
+		</s:Rect>
+		<s:Rect  left="1" right="1" top="1" bottom="1" radiusX="3" radiusY="3">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x787878" ratio="0.0" />
+					<s:GradientEntry color="0x666666" ratio="0.6" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<s:Rect alpha="0.2" height="2" left="1" right="1" top="0">
+			<s:fill>
+				<s:SolidColor color="0xFFFFFF" />
+			</s:fill>
+		</s:Rect>
+		<mx:Text htmlText="{_text}" color="0xFFFFFF" fontFamily="Calibri" fontSize="12"
+					verticalCenter="0" horizontalCenter="0"
+					maxWidth="350" truncateToFit="true"
+					paddingLeft="10" paddingRight="10" paddingTop="10" paddingBottom="10">
+			<mx:filters>
+				<s:DropShadowFilter color="0x000000" distance="1" alpha=".6" blurX="0" blurY="0" angle="-90" />
+			</mx:filters>
+		</mx:Text>
+	</s:Group>
+	
+</s:Group>

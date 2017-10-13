@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:buttons="fr.kapit.lab.demo.buttons.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:help="fr.kapit.lab.demo.ui.components.help.*"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ns="http://www.kapit.fr/flex4/ui"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 currentState="open"
+		 buttonMode="true" useHandCursor="true"
+		 rollOver="group1_rollOverHandler(event)"
+		 rollOut="group1_rollOutHandler(event)"
+		 click="hgroup1_clickHandler(event)"
+		 >
+
+	<fx:Script>
+	<![CDATA[
+		protected function hgroup1_clickHandler(event:MouseEvent):void
+		{
+			if (currentState == "open")
+			{
+				currentState = "close";
+			}
+			else
+			{
+				currentState = "open";
+			}
+		}
+
+		protected function group1_rollOverHandler(event:MouseEvent):void
+		{
+			button.setStyle('icon', arrow_over);
+		}
+
+		protected function group1_rollOutHandler(event:MouseEvent):void
+		{
+			button.setStyle('icon', arrow);
+		}
+	]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<s:states>
+		<s:State name="open" />
+		<s:State name="close" />
+	</s:states>
+
+	<s:Image id="help" source="@Embed('/fr/kapit/lab/demo/asset/help.png')" />
+	<s:Button id="button"
+			  skinClass="fr.kapit.lab.demo.ui.components.help.HelpButtonSkin"
+			  width="13" height="8"
+			  left="5" top="5"
+			  icon.close="{arrow_over}" icon.open="{arrow}"
+			  rotation.close="180" rotation.open="0"
+			  />
+
+</s:Group>

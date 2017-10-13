@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:buttons="fr.kapit.lab.demo.buttons.*"
+		 xmlns:components="fr.kapit.lab.demo.menubar.components.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 >
+
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.lab.demo.menubar.events.ToolBarEvent;
+		import fr.kapit.visualizer.Visualizer;
+		import fr.kapit.visualizer.actions.ShortestPathAction;
+
+		[Bindable]
+		public var visualizer:Visualizer;
+
+		protected function toolBar_selectionChangedHandler(event:ToolBarEvent):void
+		{
+			if (toolBar.selectedItem == shortestPathTool)
+			{
+				visualizer.activateAction(ShortestPathAction.ID);
+			}
+			else
+			{
+				visualizer.deactivateAction(ShortestPathAction.ID);
+			}
+		}
+	]]>
+	</fx:Script>
+
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0xB3B3B3" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xF2F2F2" />
+		</s:fill>
+	</s:Rect>
+
+	<s:HGroup height="100%" left="10" verticalAlign="middle" gap="10">
+		<components:ToolBar id="toolBar"
+							selectionChanged="toolBar_selectionChangedHandler(event)"
+							>
+			<components:ToolBarItem id="toolSelection"
+									skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemVerticalSkin"
+									toolTip="Selection tool"
+									>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CURSOR}"
+										label="Selection"
+										/>
+			</components:ToolBarItem>
+			<components:ToolBarItem id="shortestPathTool"
+									skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemVerticalSkin"
+									toolTip="Shortest Path tool : select two different nodes to get the minimum path"
+									>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_PATHFIND_TOOL}"
+										label="Shortest Path Finder"
+										/>
+			</components:ToolBarItem>
+		</components:ToolBar>
+	</s:HGroup>
+</s:Group>

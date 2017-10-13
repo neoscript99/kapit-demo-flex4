@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:TemplateDemoContainer xmlns:components="fr.kapit.lab.demo.common.components.*"
+								  xmlns:diagrammer="fr.kapit.lab.demo.ui.components.diagrammer.*"
+								  xmlns:fx="http://ns.adobe.com/mxml/2009"
+								  xmlns:menubar="fr.kapit.lab.demo.ui.components.menubar.*"
+								  xmlns:mx="library://ns.adobe.com/flex/mx"
+								  xmlns:properties="fr.kapit.lab.demo.ui.properties.*"
+								  xmlns:s="library://ns.adobe.com/flex/spark"
+								  skinClass="fr.kapit.lab.demo.common.skins.TemplateDemoContainerSkin"
+								  openOptions="false"
+								  showAboutInfo="this_showAboutInfoHandler(event)"
+								  showToggleButtonOptions="false" tabEnabled="false"
+								  title="MindMap"
+								  >
+
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.diagrammer.Diagrammer;
+
+		import mx.events.FlexEvent;
+
+		[Bindable]
+		public var _diagrammer:Diagrammer;
+
+		protected function mindMapViewCreationCompleteHandler(event:FlexEvent):void
+		{
+			_diagrammer = mindMapView;
+
+		}
+
+		protected function this_showAboutInfoHandler(event:Event):void
+		{
+			aboutPanel.open = true;
+		}
+
+		protected function actionMenuBar_addChildHandler(event:Event):void
+		{
+			stage.dispatchEvent(new KeyboardEvent(KeyboardEvent.KEY_DOWN, true, false, Keyboard.TAB, Keyboard.TAB));
+		}
+
+		protected function actionMenuBar_addSiblingHandler(event:Event):void
+		{
+			stage.dispatchEvent(new KeyboardEvent(KeyboardEvent.KEY_DOWN, true, false, Keyboard.ENTER, Keyboard.ENTER));
+		}
+
+		protected function actionMenuBar_deleteNodeHandler(event:Event):void
+		{
+			stage.dispatchEvent(new KeyboardEvent(KeyboardEvent.KEY_DOWN, true, false, Keyboard.DELETE, Keyboard.DELETE));
+		}
+		
+		protected function actionMenuBar_editNodeHandler(event:Event):void
+		{
+			stage.dispatchEvent(new KeyboardEvent(KeyboardEvent.KEY_DOWN, true, false, Keyboard.SPACE, Keyboard.SPACE));
+		}
+		
+	]]>
+	</fx:Script>
+
+	<!-- RIGHT PANEL -->
+
+	<components:optionsContent>
+		<properties:PropertiesPanel id="propertiesPanel" diagrammer="{_diagrammer}" />
+	</components:optionsContent>
+
+	<s:VGroup width="100%" height="100%" gap="0">
+		<!-- TOP MENU BAR -->
+		<menubar:MenuBar id="viewMenuBar"
+						 width="100%" height="40"
+						 diagrammer="{_diagrammer}"
+						 />
+		<diagrammer:MindMapView id="mindMapView"
+								width="100%" height="100%"
+								creationComplete="mindMapViewCreationCompleteHandler(event)"
+								/>
+
+		<menubar:BottomMenuBar id="actionMenuBar"
+							   addChild="actionMenuBar_addChildHandler(event)"
+							   addSibling="actionMenuBar_addSiblingHandler(event)"
+							   deleteNode="actionMenuBar_deleteNodeHandler(event)"
+							   editNode="actionMenuBar_editNodeHandler(event)"
+							   />
+
+	</s:VGroup>
+
+	<fx:Declarations>
+		<components:AboutPanel id="aboutPanel"
+							   parentPopUp="{this}" title="About Kalileo MindMap Demo"
+							   >
+			<components:description>
+				<![CDATA[
+				<br/>This demo is a simple mindmapping  application. Kalileo’s Diagrammer component is used in order to visually outline information. It focuses on the following features implementation:
+				<br/> <li> <b> Easy keyboard interaction integration:</b> Using keyboard action, you can add, edit , remove and navigate on the graph. </li>
+				<li> <b> Custom Commands:</b> Using command's feature of Kalileo to create custom undo/redo behaviour.</li>
+				<li> <b> Undo/Redo:</b> Erases (respectively redraws) the last change done to the graph and reverts it to a previous state.</li>
+				<li> <b> Rendering:</b> This demo uses a custom rendereres and show how can rendering done easly.</li>
+				<li> <b> Import/Export:</b> Save your graph on PNG and XML formats and reload it anytime from an XML file.</li>]]>
+			</components:description>
+		</components:AboutPanel>
+	</fx:Declarations>
+
+</components:TemplateDemoContainer>

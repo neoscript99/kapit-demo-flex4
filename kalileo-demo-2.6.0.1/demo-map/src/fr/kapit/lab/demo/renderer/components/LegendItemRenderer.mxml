@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				autoDrawBackground="true"
+				>
+	<fx:Script>
+	<![CDATA[
+		import mx.utils.ColorUtil;
+
+		[Bindable]
+		protected var _firstColor:uint;
+
+		[Bindable]
+		protected var _secondColor:uint;
+
+		[Bindable]
+		[Bindable]
+		protected var _labelTxt:String;
+
+		public override function set data(value:Object):void
+		{
+			super.data = value;
+			_firstColor = value.type == 'international' ? 0x24A9E0 :0xD21141;
+			_secondColor = ColorUtil.adjustBrightness2(_firstColor,-2);
+			_labelTxt = value.label;
+		}
+	]]>
+	</fx:Script>
+	<s:Group width="24" height="24">
+		<s:Ellipse left="2" right="2" top="2" bottom="2">
+			<s:stroke>
+				<s:LinearGradientStroke weight="4">
+					<s:GradientEntry color="{_firstColor}" />
+					<s:GradientEntry color="{_secondColor}" />
+				</s:LinearGradientStroke>
+			</s:stroke>
+		</s:Ellipse>
+	</s:Group>
+	<s:Label color="0x3E3D40" fontSize="11" text="{_labelTxt}" />
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="5" verticalAlign="middle" />
+	</s:layout>
+
+</s:ItemRenderer>

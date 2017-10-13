@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group implements="fr.kapit.visualizer.renderers.IRenderer, fr.kapit.visualizer.renderers.ISelectable"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:skins="fr.kapit.lab.demo.skins.*"
+		 xmlns:util="fr.kapit.lab.demo.util.*"
+		 width="48" height="48"
+		 >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.data.map.MapAirport;
+		import fr.kapit.lab.demo.managers.AssetsManager;
+		import fr.kapit.lab.demo.ui.components.map.MapVisualizer;
+		import fr.kapit.visualizer.base.IItem;
+
+		import mx.binding.utils.BindingUtils;
+
+		/* ***************
+		* Internal
+		*****************/
+		[Bindable]
+		public var includeLabel:Boolean;
+
+		protected var _type:String;
+
+		[Bindable]
+		public function get type():String
+		{
+			return _type;
+		}
+
+		public function set type(value:String):void
+		{
+			_type = value;
+		}
+
+		protected var _supportLevelOfDeltails:Boolean = true;
+
+		public function get supportLevelOfDeltails():Boolean
+		{
+			return _supportLevelOfDeltails;
+		}
+
+		public function set supportLevelOfDeltails(value:Boolean):void
+		{
+			_supportLevelOfDeltails = value;
+		}
+
+		/* ***************
+		* IRenderer implementation
+		*****************/
+
+		protected var _data:Object;
+
+		[Bindable]
+		protected var _airport:MapAirport;
+
+		public function get data():Object
+		{
+			return _data;
+		}
+
+		public function set data(value:Object):void
+		{
+			_data = value;
+			_airport = MapAirport(value);
+			type = _airport.type;
+		}
+
+		protected var _isFixed:Boolean = false;
+
+		public function get isFixed():Boolean
+		{
+			return _isFixed;
+		}
+
+		public function set isFixed(value:Boolean):void
+		{
+			_isFixed = value;
+		}
+
+		protected var _item:IItem;
+
+		protected var _visualItem:DisplayObject;
+
+		protected var _visualizer:MapVisualizer;
+
+		public function get item():IItem
+		{
+			return _item;
+		}
+
+		public function set item(value:IItem):void
+		{
+			_item = value;
+			_visualItem = DisplayObject(_item);
+			_visualizer = _item.visualizer as MapVisualizer;
+			registerBindings();
+		}
+
+		/* ***************
+		* ISelectable implementation
+		*****************/
+
+		protected var _isHighlighted:Boolean;
+
+		public function set isHighlighted(value:Boolean):void
+		{
+			_isHighlighted = value;
+			syncWithState();
+		}
+
+		protected var _isSelected:Boolean;
+
+		public function set isSelected(value:Boolean):void
+		{
+			_isSelected = value;
+			syncWithState();
+		}
+
+		/* *******
+		* Sync Methods
+		***********/
+
+		private function syncWithState():void
+		{
+			if (_isSelected && !_isHighlighted)
+			{
+				currentState = "selected";
+			}
+			else if (_isHighlighted)
+			{
+				currentState = "highlighted";
+			}
+			else
+			{
+				currentState = "normal";
+			}
+		}
+
+		protected function registerBindings():void
+		{
+			BindingUtils.bindSetter(updateRing,_data,"internationalFlights",true);
+			BindingUtils.bindSetter(updateRing,_data,"nationalFlights",true);
+		}
+
+		protected function updateRing(value:Object):void
+		{
+			ringHelper.drawRing(this,[_airport.internationalFlights, _airport.nationalFlights]);
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<util:RingHelper id="ringHelper" />
+	</fx:Declarations>
+	<s:states>
+		<s:State name="selected" />
+		<s:State name="highlighted" />
+		<s:State name="normal" />
+	</s:states>
+	<!--Wedge-->
+	<s:VGroup width="100%" height="100%"
+			  paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"
+			  horizontalAlign="center" verticalAlign="middle"
+			  >
+		<skins:Airplane width="24" height="24" />
+	</s:VGroup>
+	<s:Label width="96" bottom="-24" x="{(width-96)*0.5}"
+			 fontSize="9" fontWeight="bold" textAlign="center" verticalAlign="bottom"
+			 includeInLayout="{includeLabel}" text="{_airport.label}"
+			 maxDisplayedLines="2" visible="{includeLabel}"/>
+</s:Group>

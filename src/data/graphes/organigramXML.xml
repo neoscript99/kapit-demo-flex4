@@ -1,0 +1,51 @@
+<graphml>
+	<node id="n1" label="Chief Technology Officer" name="Drew P.Brady" renderer="Vcard"/>
+	<node id="n12" label="Project Team">
+		<graph id="n1:" edgedefault="undirected">
+			<node id="n1::n1" label="Project Manager" />
+			<node id="n1::n2" label="Quality Assurance" color="#CEE3F0"/>
+			<node id="n1::n3" label="Quality Tester" color="#CEE3F0"/>
+			<node id="n1::n4" label="Test Writer" color="#CEE3F0"/>
+			<node id="n1::n5" label="System Analyst and Designer" color="#F3EFD0"/>
+			<node id="n1::n6" label="Team Lead" color="#E3E9D3"/>
+			<node id="n1::n7" label="Sr.Software Engineer" color="#E3E9D3"/>
+			<node id="n1::n8" label="Software Engineer" color="#E3E9D3"/>
+			<edge id="e14" source="n1::n1" target="n1::n5"/>
+			<edge id="e15" source="n1::n1" target="n1::n2"/>
+			<edge id="e16" source="n1::n1" target="n1::n6"/>
+			<edge id="e17" source="n1::n2" target="n1::n3"/>
+			<edge id="e18" source="n1::n3" target="n1::n4"/>
+			<edge id="e19" source="n1::n6" target="n1::n7"/>
+			<edge id="e20" source="n1::n7" target="n1::n8"/>
+		</graph>
+	</node>
+	<node id="n13" label="Technical Team">
+		<graph id="n2:" edgedefault="undirected">
+			<node id="n2::n1" label="Technical Support Manager"/>
+			<node id="n2::n2" label="IT Trainer" color="#F7E1D1"/>
+			<node id="n2::n3" label="Technical Services Co-ordinators" color="#E9CFCD"/>
+			<node id="n2::n4" label="Help Desk Manager" color="#E6CCD9"/>
+			<node id="n2::n7" label="Help Desk Specialist" color="#E6CCD9"/>
+			<node id="n2::n8" label="Help Desk Advisors" color="#E6CCD9"/>
+			<node id="n2::n5" label="IT Technicians" color="#F7E1D1"/>
+			<node id="n2::n6" label="Technical Specialists" color="#F7E1D1"/>
+			
+			<node id="n2::n9" label="Assistant Help Desk Advisors" color="#E6CCD9"/>
+			
+			<edge id="e30" source="n2::n1" target="n2::n2"/>
+			<edge id="e31" source="n2::n1" target="n2::n3"/>
+			<edge id="e32" source="n2::n1" target="n2::n4"/>
+			
+			<edge id="e33" source="n2::n2" target="n2::n5"/>
+			<edge id="e39" source="n2::n2" target="n2::n6"/>
+			
+			
+			<edge id="e34" source="n2::n4" target="n2::n7"/>
+			<edge id="e35" source="n2::n7" target="n2::n8"/>
+			<edge id="e36" source="n2::n7" target="n2::n9"/>
+		</graph>
+	</node>
+	<edge id="e37" source="n1" target="n1::n1"/>
+	<edge id="e38" source="n1" target="n2::n1"/>
+	
+</graphml>

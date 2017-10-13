@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup implements="fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel"
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:forms="fr.kapit.lab.demo.forms.*" xmlns:components="fr.kapit.lab.demo.common.components.*"
+>
+	<fx:Declarations>
+		<s:ArrayCollection id="textStyles">
+			<fx:Object label="Regular" value="{TextStyleFlags.NONE}" />
+			<fx:Object label="Italic" value="{TextStyleFlags.ITALIC}" />
+			<fx:Object label="Bold" value="{TextStyleFlags.BOLD}" />
+			<fx:Object label="Bold Italic" value="{TextStyleFlags.ITALIC | TextStyleFlags.BOLD}" />
+		</s:ArrayCollection>
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.common.data.ColorPickerColor;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.model.NormalizedDefaultItemRendererModel;
+		import fr.kapit.lab.demo.models.IDefaultItemRendererModel;
+		import fr.kapit.lab.demo.models.constants.DefaultItemRendererConstants;
+		import fr.kapit.lab.demo.models.constants.TextStyleFlags;
+		import fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel;
+		import fr.kapit.lab.demo.util.DebugUtil;
+		import fr.kapit.lab.demo.util.NormalizedValue;
+		
+		import spark.events.IndexChangeEvent;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+		[Bindable] public var dataLabel:String = null;
+		[Bindable] public var fieldsTextFormatFlags:uint = TextStyleFlags.NONE;
+		[Bindable] public var fieldsTextSize:uint = DefaultItemRendererConstants.FIELDS_TEXT_SIZE;
+		[Bindable] public var fieldsTextColor:uint = DefaultItemRendererConstants.FIELDS_TEXT_COLOR;
+
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			var normalizedModel:NormalizedDefaultItemRendererModel;
+			normalizedModel = getNormalizedModel();
+
+			if (!normalizedModel)
+				return;
+
+			var normalized:NormalizedValue;
+
+			normalized = normalizedModel.normalizedDataLabel;
+			if (normalized.isDefined)
+			{
+				dataLabel = normalized.value;
+				dataLabelSelector.text = dataLabel;
+			}
+			else
+			{
+				dataLabel = null;
+				dataLabelSelector.text = dataLabel;
+			}
+
+			normalized = normalizedModel.normalizedFieldsTextFormat;
+			if (normalized.isDefined)
+			{
+				fieldsTextFormatFlags = TextStyleFlags.textFormatToFlags( TextFormat(normalized.value) );
+				//fieldsTextFormatFlagsSelector.isUnknownValue = false;
+				//fieldsTextFormatFlagsSelector.value = fieldsTextFormatFlags;
+			}
+			else
+			{
+				fieldsTextFormatFlags = TextStyleFlags.NONE;
+				//fieldsTextFormatFlagsSelector.isUnknownValue = true;
+				//fieldsTextFormatFlagsSelector.value = fieldsTextFormatFlags;
+			}
+
+			normalized = normalizedModel.normalizedFieldsTextSize;
+			if (normalized.isDefined)
+			{
+				fieldsTextSize = normalized.value;
+				fieldsTextSizeSelector.isUnknownValue = false;
+				fieldsTextSizeSelector.value = fieldsTextSize;
+			}
+			else
+			{
+				fieldsTextSize = DefaultItemRendererConstants.FIELDS_TEXT_SIZE;
+				fieldsTextSizeSelector.isUnknownValue = true;
+				fieldsTextSizeSelector.value = fieldsTextSize;
+			}
+
+			normalized = normalizedModel.normalizedFieldsTextColor;
+			if (normalized.isDefined)
+			{
+				fieldsTextColor = normalized.value;
+				textColorPicker.selectedColor = fieldsTextColor;
+			}
+			else
+			{
+				fieldsTextColor = DefaultItemRendererConstants.FIELDS_TEXT_COLOR;
+				textColorPicker.selectedColor = fieldsTextColor;
+			}
+		}
+
+
+		/**
+		 * Applies the label to the current node selection.
+		 */
+		protected function updateDataLabel():void
+		{
+			selectedNodeRenderersModel.dataLabel = dataLabelSelector.text;
+		}
+
+		/*
+		 * Applies the fields text format to the current node selection.
+		 *
+
+		protected function updateFieldsTextFormatFlags():void
+		{
+			if (fieldsTextFormatFlagsSelector.isUnknownValue)
+				return;
+			selectedNodeRenderersModel.fieldsTextFormatFlags = fieldsTextFormatFlagsSelector.value;
+		}
+		*/
+
+		/**
+		 * Applies the fields text size to the current node selection.
+		 */
+		protected function updateFieldsTextSize():void
+		{
+			if (fieldsTextSizeSelector.isUnknownValue)
+				return;
+			selectedNodeRenderersModel.fieldsTextSize = fieldsTextSizeSelector.value;
+		}
+		/**
+		 * Applies the fields text color to the current node selection.
+		 */
+	/* 	protected function updateFieldsTextColor():void
+		{
+			if (fieldsTextColorSelector.isUnknownColor)
+				return;
+			selectedNodeRenderersModel.fieldsTextColor = fieldsTextColorSelector.value;
+		} */
+
+		/**
+		 * Casts the IDefaultItemRendererModel to NormalizedDefaultItemRendererModel
+		 *
+		 * @return
+		 *		normalized model
+		 */
+		protected function getNormalizedModel():NormalizedDefaultItemRendererModel
+		{
+			if (! selectedNodeRenderersModel)
+				return null;
+			return NormalizedDefaultItemRendererModel(selectedNodeRenderersModel);
+		}
+
+		/**
+		 * Reference to the <code>IDefaultItemRendererModel</code> instance
+		 * used to configure the current node selection.
+		 */
+		public function get selectedNodeRenderersModel():IDefaultItemRendererModel
+		{
+			if (! appModel)
+				return null;
+			if (! appModel.diagrammerModel)
+				return null;
+
+			return appModel.diagrammerModel.selectedNodeRenderersModel;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			_applicationModel = objValue;
+		}
+		
+		protected function textColorPicker_changeHandler(event:IndexChangeEvent):void
+		{
+			if(textColorPicker.selectedItem)
+			selectedNodeRenderersModel.fieldsTextColor = ColorPickerColor(textColorPicker.selectedItem).color;
+			
+		}
+		
+	]]>
+	</fx:Script>
+
+	<s:HGroup width="100%" verticalAlign="middle">
+		<s:Label fontWeight="bold" text="Label" height="100%" verticalAlign="middle" paddingTop="2"/>
+		<s:TextInput id="dataLabelSelector"
+			width="100%"
+			text="{dataLabel}"
+			keyUp="updateDataLabel()"
+		/>
+	</s:HGroup>
+
+	<s:Line width="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="#C5C5C8" caps="square" />
+		</s:stroke>
+	</s:Line>
+<!--
+	<forms:HDropDownListSelector id="fieldsTextFormatFlagsSelector"
+		dataProvider="{textStyles}"
+		label="Style"
+		value="{fieldsTextFormatFlags}"
+		modified="{updateFieldsTextFormatFlags()}"
+	/>
+-->
+	<forms:StepperSelector id="fieldsTextSizeSelector"
+		label="Font size"
+		min="6" max="30"
+		value="{fieldsTextSize}"
+		modified="{updateFieldsTextSize()}"
+	/>
+	<s:HGroup width="100%"  paddingTop="5">
+		<s:Label text="Color" paddingTop="5" fontWeight="bold" verticalAlign="middle"/>
+		<components:ColorPicker id="textColorPicker" change="textColorPicker_changeHandler(event)"  selectedColor="{fieldsTextColor}"  />
+	</s:HGroup>
+
+</s:VGroup>

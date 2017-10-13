@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup 
+		xmlns:fx="http://ns.adobe.com/mxml/2009"
+		xmlns:s="library://ns.adobe.com/flex/spark"
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		xmlns:forms="fr.kapit.lab.demo.forms.*"
+>
+	<fx:Declarations>
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.diagrammer.Diagrammer;
+		import fr.kapit.lab.demo.util.NormalizedValue;
+		import fr.kapit.lab.demo.util.PropertyUtil;
+
+ 		private var _diagrammer:Diagrammer = null;
+
+		[Bindable] public var beginBackgroundColor:uint = DefaultItemRendererConstants.BACKGROUND_COLORS_BEGIN;
+		[Bindable] public var endBackgroundColor:uint = Defaultitemr.BACKGROUND_COLORS_END;
+
+
+		[Bindable]
+		/**
+		 * @private
+		 * Reference to the diagrammer
+		 */
+		public function get diagrammer():Diagrammer
+		{
+			return _diagrammer;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set diagrammer(value:Diagrammer):void
+		{
+			_diagrammer = value;
+		}
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			var normalizedModel:NormalizedDefaultItemRendererModel;
+			normalizedModel = getNormalizedModel();
+
+			if (!normalizedModel)
+				return;
+
+			var normalized:NormalizedValue;
+
+			normalized = normalizedModel.normalizedBackgroundColors;
+			if (!normalized.isDefined)
+			{
+				beginBackgroundColor = DefaultItemRendererConstants.BACKGROUND_COLORS_BEGIN;
+				endBackgroundColor = DefaultItemRendererConstants.BACKGROUND_COLORS_END;
+
+				backgroundColorSelector.isUnknownColor = true;
+				beginBackgroundColorSelector.isUnknownColor = true;
+				endBackgroundColorSelector.isUnknownColor = true;
+
+				backgroundColorSelector.value = beginBackgroundColor;
+				beginBackgroundColorSelector.value = beginBackgroundColor;
+				endBackgroundColorSelector.value = endBackgroundColor;
+			}
+			else
+			{
+				var colors:Array = normalized.value as Array;
+				beginBackgroundColor = uint(colors[0]);
+				endBackgroundColor = uint(colors[1]);
+
+				backgroundColorSelector.isUnknownColor = false;
+				beginBackgroundColorSelector.isUnknownColor = false;
+				endBackgroundColorSelector.isUnknownColor = false;
+
+				backgroundColorSelector.value = beginBackgroundColor;
+				beginBackgroundColorSelector.value = beginBackgroundColor;
+				endBackgroundColorSelector.value = endBackgroundColor;
+
+				if ( PropertyUtil.isColorFill(colors) )
+					switchToState("fillSettings");
+				else
+					switchToState("gradientSettings");
+			}
+		}
+
+		/**
+		 * Applies the background colors to the current node selection.
+		 */
+		protected function updateBackgroundColors():void
+		{
+			if ("fillSettings" == currentState)
+			{
+				if (backgroundColorSelector.isUnknownColor)
+					return;
+				beginBackgroundColor = backgroundColorSelector.value;
+				endBackgroundColor = backgroundColorSelector.value;
+			}
+			else
+			{
+				if (beginBackgroundColorSelector.isUnknownColor)
+					return;
+				if (endBackgroundColorSelector.isUnknownColor)
+					return;
+				beginBackgroundColor = beginBackgroundColorSelector.value;
+				endBackgroundColor = endBackgroundColorSelector.value;
+			}
+
+			backgroundColorSelector.isUnknownColor = false;
+			beginBackgroundColorSelector.isUnknownColor = false;
+			endBackgroundColorSelector.isUnknownColor = false;
+
+			selectedNodeRenderersModel.backgroundColors = [ beginBackgroundColor, endBackgroundColor ];
+		}
+
+		/**
+		 * Switches the state of the flex component. The dropdownlist
+		 * selection is updated as well to reflect the change.
+		 *
+		 * @param stateName
+		 * 		name of the state to switch to
+		 */
+		protected function switchToState(stateName:String):void
+		{
+			for each (var objItem:Object in currentStateSelector.dataProvider)
+			{
+				if (objItem.state != stateName)
+					continue;
+				currentStateSelector.selectedItem = objItem;
+			}
+			currentState = stateName;
+		}
+
+		/**
+		 * Casts the IDefaultItemRendererModel
+		 * to NormalizedDefaultItemRendererModel
+		 *
+		 * @return
+		 *		normalized model
+		 */
+		protected function getNormalizedModel():NormalizedDefaultItemRendererModel
+		{
+			if (! selectedNodeRenderersModel)
+				return null;
+			return NormalizedDefaultItemRendererModel(selectedNodeRenderersModel);
+		}
+
+		/**
+		 * Reference to the <code>IDefaultItemRendererModel</code> instance
+		 * used to configure the current node selection.
+		 */
+		public function get selectedNodeRenderersModel():IDefaultItemRendererModel
+		{
+			if (! appModel)
+				return null;
+			if (! appModel.diagrammerModel)
+				return null;
+
+			return appModel.diagrammerModel.selectedNodeRenderersModel;
+		}
+
+	]]>
+	</fx:Script>
+
+	<s:states>
+		<s:State name="gradientSettings" />
+		<s:State name="fillSettings" />
+	</s:states>
+
+	<s:Group width="100%">
+		<s:Label text="Type" fontWeight="bold" verticalCenter="1"/>
+		<s:DropDownList id="currentStateSelector"
+			requireSelection="true" width="80" right="0"
+			selectedIndex="{0}"
+			change="{currentState = event.target.selectedItem.state;}"
+		>
+			<s:dataProvider>
+				<s:ArrayCollection>
+					<fx:Object label="gradient" state="gradientSettings" />
+					<fx:Object label="fill" state="fillSettings" />
+				</s:ArrayCollection>
+			</s:dataProvider>
+		</s:DropDownList>
+	</s:Group>
+
+	<s:Line width="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="#C5C5C8" caps="square" />
+		</s:stroke>
+	</s:Line>
+
+	<s:VGroup
+		gap="10" width="100%"
+		includeIn="fillSettings" itemCreationPolicy="immediate"
+	>
+		<forms:ColorSelector id="backgroundColorSelector"
+			label="Color"
+			value="{beginBackgroundColor}"
+			modified="{updateBackgroundColors()}"
+		/>
+	</s:VGroup>
+
+	<s:VGroup
+		gap="10" width="100%"
+		includeIn="gradientSettings" itemCreationPolicy="immediate"
+	>
+		<forms:ColorSelector id="beginBackgroundColorSelector"
+			label="Begin color"
+			value="{beginBackgroundColor}"
+			modified="{updateBackgroundColors()}"
+		/>
+		<forms:ColorSelector id="endBackgroundColorSelector"
+			label="End color"
+			value="{endBackgroundColor}"
+			modified="{updateBackgroundColors()}"
+		/>
+	</s:VGroup>
+
+</s:VGroup>

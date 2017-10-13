@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group implements="fr.kapit.lab.demo.ui.components.map.IMapLayer"
+		 xmlns:esri="http://www.esri.com/2008/ags"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 >
+	<fx:Script>
+	<![CDATA[
+		import com.esri.ags.SpatialReference;
+		import com.esri.ags.events.PanEvent;
+		import com.esri.ags.events.ZoomEvent;
+		import com.esri.ags.geometry.Extent;
+		import com.esri.ags.geometry.Geometry;
+		import com.esri.ags.geometry.MapPoint;
+		import com.esri.ags.geometry.WebMercatorExtent;
+		import com.esri.ags.geometry.WebMercatorMapPoint;
+		import com.esri.ags.utils.GeometryUtil;
+		import com.esri.ags.utils.WebMercatorUtil;
+
+		import fr.kapit.lab.demo.data.config.MapParams;
+
+		import mx.effects.Zoom;
+
+		/* ******
+		* Getters/Setters
+		*********/
+		public function get level():Number
+		{
+			return map.level;
+		}
+
+		public function get key():String
+		{
+			return "arcgisMapLayer";
+		}
+
+		private var _forceUpdate:Boolean;
+
+		public function get forceUpdate():Boolean
+		{
+			return _forceUpdate;
+		}
+
+		public function set forceUpdate(value:Boolean):void
+		{
+			_forceUpdate = value;
+		}
+
+		protected var _mapVisualizer:MapVisualizer;
+
+		public function get mapVisualizer():MapVisualizer
+		{
+			return _mapVisualizer;
+		}
+
+		public function set mapVisualizer(value:MapVisualizer):void
+		{
+			_mapVisualizer = value;
+			if (_mapVisualizer)
+			{
+				syncWithMapVisualizer();
+			}
+		}
+
+		private var _mapParams:MapParams;
+
+		private var _mapConfigChanged:Boolean;
+
+		private var topLeftPoint:MapPoint;
+
+		private var bottomRightPoint:MapPoint;
+
+		public function get mapParams():MapParams
+		{
+			return _mapParams;
+		}
+
+		public function set mapParams(value:MapParams):void
+		{
+			_mapParams = value;
+			_mapConfigChanged = true;
+			topLeftPoint = new MapPoint(_mapParams.topLatitude, _mapParams.leftLongitude,new SpatialReference(4326));
+			bottomRightPoint = new MapPoint(_mapParams.bottomLatitude, _mapParams.rightLongitude,new SpatialReference(4326));
+			invalidateProperties();
+		}
+
+		/* ******
+		* Init
+		*********/
+
+		protected function syncWithMapVisualizer():void
+		{
+			map.addEventListener(ZoomEvent.ZOOM_START,handleZoomStart);
+			map.addEventListener(PanEvent.PAN_START,handlePanStart);
+		}
+
+		protected function handleZoomStart(event:ZoomEvent):void
+		{
+			map.addEventListener(ZoomEvent.ZOOM_UPDATE,handleZoomUpdate);
+			map.addEventListener(ZoomEvent.ZOOM_END,handleZoomEnd);
+		}
+
+		protected function handleZoomUpdate(event:ZoomEvent):void
+		{
+			var ratio:Number = _mapVisualizer.getZoomByLevel();
+			if (ratio != _mapVisualizer.ratio)
+			{
+				mapVisualizer.zoomContent(ratio,null,false,false);
+			}
+			mapVisualizer.forceGraphUpdate = true;
+		}
+
+		protected function handleZoomEnd(event:ZoomEvent):void
+		{
+			map.removeEventListener(ZoomEvent.ZOOM_UPDATE,handleZoomUpdate);
+			map.removeEventListener(ZoomEvent.ZOOM_END,handleZoomEnd);
+			var ratio:Number = _mapVisualizer.getZoomByLevel();
+			if (ratio != _mapVisualizer.ratio)
+			{
+				mapVisualizer.zoomContent(ratio,null,false,false);
+			}
+			mapVisualizer.forceGraphUpdate = true;
+		}
+
+		protected function handlePanStart(event:PanEvent):void
+		{
+			map.addEventListener(PanEvent.PAN_UPDATE,handlePanUpdate);
+			map.addEventListener(PanEvent.PAN_END,handlePanEnd);
+		}
+
+		protected function handlePanUpdate(event:PanEvent):void
+		{
+			mapVisualizer.forceGraphUpdate = true;
+		}
+
+		protected function handlePanEnd(event:PanEvent):void
+		{
+			mapVisualizer.forceGraphUpdate = true;
+		}
+
+		/* ******
+		* ICustomLayer Methods
+		*********/
+
+		public function displace(deltaX:Number, deltaY:Number, withAnimation:Boolean=false, noEvent:Boolean=false):void
+		{
+			//Custom Layer controlling Pan on Visualizer. No need for Panning
+		}
+
+		public function scale(centerPoint:Point, ratio:Number, withAnimation:Boolean=false, noEvent:Boolean=false):void
+		{
+			//Custom Layer controlling Zoom on Visualizer. No need for scaling
+		}
+
+		/* ******
+		* Overriden methods
+		*********/
+
+		protected override function commitProperties():void
+		{
+			super.commitProperties();
+			if (_mapConfigChanged)
+			{
+				map.extent = new WebMercatorExtent(_mapParams.rightLongitude, _mapParams.bottomLatitude,_mapParams.leftLongitude, _mapParams.topLatitude);
+				map.validateNow();
+				_mapConfigChanged = false;
+				if (_mapVisualizer)
+				{
+					_mapVisualizer.forceGraphUpdate = true;
+				}
+
+			}
+		}
+
+		protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+		{
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+			if (_mapVisualizer)
+			{
+				_mapVisualizer.forceGraphUpdate = true;
+			}
+		}
+
+		/* ******
+		* Lat/Long
+		*********/
+
+		public function getPositionFromLatLong(latitude:Number, longitude:Number):Point
+		{
+			var mapPoint:MapPoint = new WebMercatorMapPoint(longitude, latitude);
+			mapPoint.spatialReference = map.spatialReference;
+			return map.toScreen(mapPoint);
+		}
+
+		public function centerByLatLong(latitude:Number, longitude:Number):void
+		{
+			var mapPoint:MapPoint = new WebMercatorMapPoint(longitude, latitude);
+			var pos:Point = getPositionFromLatLong(latitude,longitude);
+			map.centerAt(mapPoint);
+			if (pos &&
+				(pos.y<0 || pos.x<0 || pos.x>_mapVisualizer.width || pos.y>_mapVisualizer.height)) //No event is dispatched when latitude and longitude is out of screen.
+			{
+				callLater(validateGraphPositionnning);
+			}
+		}
+
+		public function zoomAt(level:uint):void
+		{
+			var bounds:Array
+			switch (level)
+			{
+				case 0:
+				{
+					bounds = _mapParams.worldLevelBounds;
+					break;
+				}
+				case 1:
+				{
+					bounds = _mapParams.countryLevelBounds;
+					break;
+				}
+				case 2:
+				{
+					bounds = _mapParams.cityLevelBounds;
+					break;
+				}
+			}
+			map.extent = new WebMercatorExtent(bounds[0], bounds[1],bounds[2], bounds[3]);
+			map.validateNow();
+			if (_mapVisualizer)
+			{
+				_mapVisualizer.forceGraphUpdate = true;
+			}
+		}
+
+
+		protected function validateGraphPositionnning():void
+		{
+			_mapVisualizer.forceGraphUpdate = true;
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<fx:Array id="tileFilters">
+			<s:ColorMatrixFilter id="grayScaleFilter"
+								 matrix="{[0.3, 0.59, 0.11, 0, 0,
+								 0.3, 0.59, 0.11, 0, 0,
+								 0.3, 0.59, 0.11, 0, 0,
+								 0, 0, 0, 1, 0]}"
+								 />
+		</fx:Array>
+	</fx:Declarations>
+	<esri:Map id="map" width="100%" height="100%" wrapAround180="true">
+		<esri:OpenStreetMapLayer />
+	</esri:Map>
+</s:Group>

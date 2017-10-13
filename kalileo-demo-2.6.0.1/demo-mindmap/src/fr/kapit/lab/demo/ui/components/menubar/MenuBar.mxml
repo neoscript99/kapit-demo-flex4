@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:buttons="fr.kapit.lab.demo.buttons.*"
+		 xmlns:components="fr.kapit.lab.demo.menubar.components.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 >
+
+	<fx:Library>
+		<fx:Definition name="SeparatorLine">
+			<s:Group width="1" height="30">
+				<s:Rect width="0" height="30" left="1">
+					<s:stroke>
+						<s:SolidColorStroke color="#cccccc"/>
+					</s:stroke>
+				</s:Rect>
+			</s:Group>
+		</fx:Definition>
+	</fx:Library>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.diagrammer.Diagrammer;
+		import fr.kapit.diagrammer.actions.RedoAction;
+		import fr.kapit.diagrammer.actions.UndoAction;
+		import fr.kapit.lab.demo.event.MindMapEvent;
+		import fr.kapit.lab.demo.manager.ImportExportManager;
+		import fr.kapit.layouts.algorithms.mindmap.MindMapLayout;
+		import fr.kapit.visualizer.Visualizer;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+
+		import spark.events.IndexChangeEvent;
+
+		// Constant 
+		protected static const EXPORT_AS_XML:String = "Download as XML file";
+
+		protected static const EXPORT_AS_PNG:String = "Download as PNG file";
+
+		protected static const IMPORT_AS_XML:String = "Import Kalileo XML file";
+
+		// Internal Vars
+		[Bindable(event="UndoRedoTasksChanged")]
+		protected var canRedo:Boolean ;
+
+		[Bindable(event="UndoRedoTasksChanged")]
+		protected var canUndo:Boolean ;
+
+		protected var importExportManager:ImportExportManager
+
+		protected var _diagrammer:Diagrammer;
+
+		public function get diagrammer():Diagrammer
+		{
+			return _diagrammer;
+		}
+
+		public function set diagrammer(value:Diagrammer):void
+		{
+			_diagrammer = value;
+			importExportManager = new ImportExportManager(_diagrammer)
+			importExportManager.diagrammer = _diagrammer;
+			addListeners();
+		}
+
+		protected function btredo_clickHandler(event:MouseEvent):void
+		{
+
+			diagrammer.messageAction(RedoAction.ID,'redo');
+			checkUndoRedoTasks(null);
+		}
+
+		protected function btundo_clickHandler(event:MouseEvent):void
+		{
+			diagrammer.messageAction(UndoAction.ID,'undo');
+			checkUndoRedoTasks(null);
+		}
+
+		protected function importExportPop_changeHandler(event:IndexChangeEvent):void
+		{
+			if (!importExportManager)
+			{
+				importExportManager = new ImportExportManager(_diagrammer)
+				importExportManager.diagrammer = _diagrammer;
+			}
+			switch (importExportPop.selectedItem.label)
+			{
+				case EXPORT_AS_XML:
+				{
+					importExportManager.saveAsXML()
+					break;
+				}
+				case EXPORT_AS_PNG:
+				{
+					importExportManager.saveAsPNG()
+					break;
+				}
+				case IMPORT_AS_XML:
+				{
+					importExportManager.importXML()
+					break;
+				}
+			}
+			importExportPop.selectedIndex = -1;
+		}
+
+		/**
+		 * Check if there is tasks undo-ables and/or redo-ables
+		 */
+		public function checkUndoRedoTasks(event:VisualizerEvent):void
+		{
+			var undoTasks:Array = UndoAction(_diagrammer.getActionInstance(UndoAction.ID)).tasksList;
+			var redoTasks:Array = RedoAction(_diagrammer.getActionInstance(RedoAction.ID)).tasksList;
+			canUndo = undoTasks ? undoTasks.length > 0 : false;
+			canRedo = redoTasks ? redoTasks.length > 0 : false;
+			dispatchEvent(new Event("UndoRedoTasksChanged"));
+		}
+
+		/**
+		 * Adds event listeners to the current diagrammer instance.
+		 */
+		protected function addListeners():void
+		{
+			_diagrammer.addEventListener(VisualizerEvent.GRAPH_PANNED, checkUndoRedoTasks);
+			_diagrammer.addEventListener(VisualizerEvent.ELEMENTS_PROPERTY_CHANGED, checkUndoRedoTasks);
+			_diagrammer.addEventListener(VisualizerEvent.ELEMENTS_PROPERTY_CHANGED, checkUndoRedoTasks);
+			_diagrammer.addEventListener(MindMapEvent.SUBTOPIC_ADDED, checkUndoRedoTasks);
+			_diagrammer.addEventListener(MindMapEvent.SUBTOPIC_REMOVED, checkUndoRedoTasks);
+		}
+
+		protected function newTopicAdded(event:Event):void
+		{
+			var t :Event = event;
+			// TODO Auto-generated method stub
+
+		}
+	]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<s:ArrayCollection id="tool">
+			<fx:Object id="cursor" icon="{EmbeddedAssets.IMG_MENUBAR_CURSOR_ACTIVE}" />
+			<fx:Object id="selection" icon="{EmbeddedAssets.IMG_MENUBAR_SELECTION}" />
+		</s:ArrayCollection>
+		<s:ArrayCollection id="importExportDp">
+			<fx:Object label="{EXPORT_AS_XML}" />
+			<fx:Object label="{EXPORT_AS_PNG}" />
+			<fx:Object label="{IMPORT_AS_XML}" />
+		</s:ArrayCollection>
+	</fx:Declarations>
+
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0xB3B3B3" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xF2F2F2" />
+		</s:fill>
+	</s:Rect>
+
+	<s:HGroup width="100%" left="10" top="5" verticalAlign="middle" gap="5">
+		<s:HGroup height="100%" left="10" verticalAlign="middle" gap="10">
+			<!--<s:ButtonBar id="toolBar" width="65" height="100%"
+						 dataProvider="{tool}" labelField=""
+						 >
+			</s:ButtonBar>-->
+
+			<!--<fx:SeparatorLine />-->
+			<s:HGroup height="30" verticalAlign="middle" gap="3">
+				<buttons:Button width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_UNDO}"
+								enabled="{canUndo}"
+								click="btundo_clickHandler(event)"
+								/>
+				<buttons:Button width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_REDO}"
+								enabled="{canRedo}"
+								click="btredo_clickHandler(event)"
+								/>
+			</s:HGroup>
+			<fx:SeparatorLine />
+			<s:HGroup width="100%"
+					  paddingRight="18" horizontalAlign="right" verticalAlign="middle"
+					  >
+				<s:DropDownList id="importExportPop"
+								width="150" height="30"
+								textAlign="center"
+								dataProvider="{importExportDp}" labelField="label"
+								prompt="Import/Export"
+								change="importExportPop_changeHandler(event)"
+								/>
+			</s:HGroup>
+		</s:HGroup>
+	</s:HGroup>
+
+</s:Group>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		alpha.disabled=".5" minHeight="195" minWidth="137"
+		>
+
+	<s:layout>
+		<s:VerticalLayout gap="10" paddingLeft="5" paddingTop="5" paddingRight="5" paddingBottom="5" />
+	</s:layout>
+	
+	<!-- host component -->
+	<fx:Metadata>[HostComponent("fr.kapit.pictogram.base.PictogramCell")]</fx:Metadata>
+
+	<!-- states -->
+	<s:states>
+		<s:State name="selected" />
+		<s:State name="disabled" />
+	</s:states>
+
+	<!-- mxml content -->
+	<s:HGroup gap="10" width="100%" height="80%" verticalAlign="bottom">
+		<s:Group width="100%">
+			<s:TileGroup id="unitsGrid" bottom="0" right="0"
+						 requestedColumnCount="3" requestedRowCount="4"
+						 rowAlign="justifyUsingHeight" columnAlign="justifyUsingWidth"
+						 columnWidth="28" rowHeight="28"
+						 />
+		</s:Group>
+		<s:Group width="100%">
+			<s:BitmapImage id="symbolArea" scaleMode="letterbox" horizontalAlign="left"
+						   smooth="true" smoothingQuality="high"
+						   maxWidth="50" maxHeight="50" left="0"
+						   />
+		</s:Group>
+	</s:HGroup>
+	<s:HGroup gap="10" width="100%" height="20%">
+		<s:Label id="valueLabel"
+				 color="0x4D4D4D" width="100%" textAlign="right"
+				 fontFamily="Calibri" fontWeight="bold" fontSize="36"
+				 />		
+		<s:VGroup width="100%" gap="2">
+			<s:Label id="metaDataLabel"
+					 color="0x4D4D4D"
+					 fontFamily="Calibri" fontWeight="bold" fontSize="18"
+					 />			
+			<s:Label text="metric tons per capita"
+					 color="0x808080"
+					 fontFamily="Calibri" fontStyle="italic" fontSize="8"
+					 />
+		</s:VGroup>
+	</s:HGroup>
+	
+</s:Skin>

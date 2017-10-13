@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components2:TemplateDemoContainer xmlns:components="fr.kapit.lab.demo.ui.components.*"
+								   xmlns:components1="fr.kapit.diagrammer.artifacts.components.*"
+								   xmlns:components2="fr.kapit.lab.demo.common.components.*"
+								   xmlns:data="fr.kapit.lab.demo.data.*"
+								   xmlns:diagrammer="fr.kapit.diagrammer.*"
+								   xmlns:fx="http://ns.adobe.com/mxml/2009"
+								   xmlns:info="fr.kapit.lab.demo.info.*"
+								   xmlns:layouts="fr.kapit.lab.demo.ui.components.layouts.*"
+								   xmlns:lib="fr.kapit.lab.demo.lib.*"
+								   xmlns:lib1="fr.kapit.diagrammer.lib.*"
+								   xmlns:lib2="fr.kapit.lab.demo.ui.components.lib.*"
+								   xmlns:managers="fr.kapit.lab.demo.managers.*"
+								   xmlns:menubar="fr.kapit.lab.demo.ui.components.menubar.*"
+								   xmlns:mx="library://ns.adobe.com/flex/mx"
+								   xmlns:overview="fr.kapit.visualizer.tools.overview.*"
+								   xmlns:overview1="fr.kapit.lab.demo.ui.components.overview.*"
+								   xmlns:panel="fr.kapit.lab.demo.panel.*"
+								   xmlns:properties="fr.kapit.lab.demo.ui.components.properties.*"
+								   xmlns:s="library://ns.adobe.com/flex/spark"
+								   xmlns:visualizer="fr.kapit.visualizer.*"
+								   width="100%" height="100%"
+								   openOptions="true"
+								   showAboutInfo="this_showAboutInfoHandler(event)"
+								   title="Network Monitoring"
+								   creationComplete="mainView_creationCompleteHandler(event)"
+								   >
+
+
+	<fx:Script>
+	<![CDATA[
+		import data.GraphLibrary;
+
+		import fr.kapit.actionscript.lang.ArrayUtil;
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.diagrammer.base.IDiagramGroup;
+		import fr.kapit.diagrammer.base.IDiagramLink;
+		import fr.kapit.diagrammer.base.IDiagramSprite;
+		import fr.kapit.diagrammer.lib.ILib;
+		import fr.kapit.diagrammer.lib.RendererLib;
+		import fr.kapit.diagrammer.renderers.DefaultEditorGroupRenderer;
+		import fr.kapit.diagrammer.renderers.DefaultEditorRenderer;
+		import fr.kapit.lab.demo.data.NetworkLinkModel;
+		import fr.kapit.lab.demo.data.NetworkNode;
+		import fr.kapit.lab.demo.popup.ErrorPopup;
+		import fr.kapit.lab.demo.popup.ErrorPopupWithOption;
+		import fr.kapit.lab.demo.renderer.InfrastructureLinkDecoratorRenderer;
+		import fr.kapit.lab.demo.renderer.InfrastructureNodeRenderer;
+		import fr.kapit.lab.demo.util.ArrowCursor;
+		import fr.kapit.layouts.algorithms.balloon.BalloonLayout;
+		import fr.kapit.layouts.algorithms.hierarchical.HierarchicalLayout;
+		import fr.kapit.layouts.algorithms.radial.RadialLayout;
+		import fr.kapit.layouts.algorithms.sugiyama.SugiyamaLayout;
+		import fr.kapit.layouts.constants.EdgeDrawType;
+		import fr.kapit.layouts.constants.RootSelectionType;
+		import fr.kapit.visualizer.Visualizer;
+		import fr.kapit.visualizer.actions.DisplaceAction;
+		import fr.kapit.visualizer.actions.ZoomAction;
+		import fr.kapit.visualizer.actions.data.DisplaceActionData;
+		import fr.kapit.visualizer.actions.data.ZoomActionData;
+		import fr.kapit.visualizer.base.IItem;
+		import fr.kapit.visualizer.base.ILink;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+
+		import mx.collections.ArrayCollection;
+		import mx.core.IFlexDisplayObject;
+		import mx.events.FlexEvent;
+		import mx.managers.PopUpManager;
+
+
+
+		private var _rootSelectionPolicies:ArrayCollection = new ArrayCollection([
+			{label:"Most closed", value:RootSelectionType.MOST_CLOSED_ROOT_SELECTION},
+			{label:"Most surrounded", value:RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION},
+			{label:"Most weighted", value:RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION}
+		]);
+
+		/**
+		 * @private
+		 * Current ratio of the visualizer component.
+		 */
+		[Bindable]
+		private var _zoomRatio:Number = 1;
+
+		/**
+		 * @private
+		 * Instance of popup to display error on layouts
+		 */
+		private var _layoutErrorPopup:IFlexDisplayObject;
+
+		/**
+		 * @private
+		 * Nodes Data Model map.
+		 */
+		protected var linkDataModelMap:Dictionary;
+
+		/* *************
+		* Import/Export methods
+		**************/
+
+		[Bindable]
+		private var _importSource:XML;
+
+		public function set importSource(value:XML):void
+		{
+			_importSource = value;
+			if (!value)
+			{
+				return;
+			}
+			else
+			{
+				diagrammer.fromXML(_importSource);
+				setNodesDataModel();
+			}
+
+		}
+
+		protected function nodeToXML(data:Object):XML
+		{
+			var infraObject:NetworkNode = data as NetworkNode;
+			var xml:XML = new XML(<infraStructure/>);
+			xml.@uid = infraObject.uid;
+			xml.@iconID=infraObject.iconID;
+			xml.@description=infraObject.description;
+			return xml;
+		}
+
+		protected function nodeFromXML(xml:XML):Object
+		{
+			var infraObject:NetworkNode = new NetworkNode();
+			infraObject.iconID = String(xml.@iconID);
+			if (String(xml.@uid))
+			{
+				infraObject.uid = String(xml.@uid)
+			}
+			infraObject.description = String(xml.@description);
+			infraObject.icon = iconsMap[infraObject.iconID];
+			return infraObject;
+		}
+		
+		
+		/**
+		 * @private
+		 * Handles the ELEMENTS_DATA_LOADED event dispatched by
+		 * the data-visualization component and injects data model to the newly created nodes.
+		 *
+		 * @param event
+		 */
+		protected function setNodesDataModel():void
+		{
+			var links:Dictionary = diagrammer.linksMap;
+			var link:IDiagramLink;
+			for each (link in links)
+			{
+				link.dataModel = new NetworkLinkModel();
+				link.dataModelID = link.itemID;
+				linkDataModelMap[link.dataModelID] = link;
+			}
+		}
+
+		/* *************
+		* Configuration methods
+		**************/
+		
+		protected var iconsMap:Dictionary;
+		protected function configureData():void
+		{
+			
+			iconsMap = new Dictionary();
+			iconsMap["application_server"] = EmbeddedAssets.NETWORK_APPLICATION_SERVER;
+			iconsMap["backup_server"] = EmbeddedAssets.NETWORK_BACKUP_SERVER;
+			iconsMap["cluster"] = EmbeddedAssets.NETWORK_CLUSTER;
+			iconsMap["data_center"] = EmbeddedAssets.NETWORK_DATA_CENTER;
+			iconsMap["database_server"] = EmbeddedAssets.NETWORK_DATABASE_SERVER;
+			iconsMap["file"] = EmbeddedAssets.NETWORK_FILE;
+			iconsMap["internet"] = EmbeddedAssets.NETWORK_INTERNET;
+			iconsMap["phone"] = EmbeddedAssets.NETWORK_PHONE;
+			iconsMap["printer"] = EmbeddedAssets.NETWORK_PRINTER;
+			iconsMap["satellite"] = EmbeddedAssets.NETWORK_SATELLITE_RECEIVER;
+			iconsMap["spatial_satellite"] = EmbeddedAssets.NETWORK_SATELLITE;
+			iconsMap["wireless_router"] = EmbeddedAssets.NETWORK_WIRELESS_ROUTER;
+			iconsMap["gateway"] = EmbeddedAssets.NETWORK_GATEWAY;
+			iconsMap["workstation"] = EmbeddedAssets.NETWORK_WORKSTATION;
+			linkDataModelMap = new Dictionary();
+			//Import/Export files
+			diagrammer.nodeImportDataFunction = nodeFromXML;
+			diagrammer.nodeExportDataFunction = nodeToXML;
+		}
+		protected function configureLayout():void
+		{	
+			diagrammer.layoutID = SugiyamaLayout.ID;
+			// Physics simulator customization
+			diagrammer.fadeLayout.attractionFactor = -10;
+			diagrammer.fadeLayout.defaultSpringTension = 0.2;
+			// Hierarchical Layout customization
+			diagrammer.hierarchicalCyclicLayout.edgeDrawing = EdgeDrawType.ORTHOGONAL_STRAIGHT_POLYLINE;
+			diagrammer.hierarchicalCyclicLayout.verticalDistance = 60;
+			diagrammer.radialLayout.nodesSpacing = 40;
+		}
+		protected function configureRendering():void
+		{	
+			diagrammer.setStyle("showNodeExpandCollapseButton", 0);
+			//Rendering Customization
+			diagrammer.nodeRendererClass = InfrastructureNodeRenderer;
+			diagrammer.linkDecoratorRendererClass = InfrastructureLinkDecoratorRenderer;
+		}
+		protected function configureActions():void
+		{
+			//Adding extra zoom features ( Mark on mouse wheel)
+			var zoomActionData:ZoomActionData = new ZoomActionData();
+			zoomActionData.markOnWheelZoom = true;
+			diagrammer.updateAction(ZoomAction.ID,zoomActionData);
+		}
+		protected function configureListeners():void
+		{
+			//Catching on items creation/delete for injecting corresponding data model.
+			diagrammer.addEventListener(VisualizerEvent.ELEMENTS_CREATED,datavizComponent_elementCreatedHandler);
+			diagrammer.addEventListener(VisualizerEvent.ELEMENTS_DELETED, datavizComponent_elementDeletedHandler);
+			//Errors catching on layout failure
+			diagrammer.addEventListener(VisualizerEvent.LAYOUT_FAILED, layoutFailedHandler);
+			diagrammer.addEventListener(VisualizerEvent.LAYOUT_SUCCEED, layoutSucceedHandler);
+			//Used to synchronize the zoom ratio of the diagrammer component and the overview component
+			diagrammer.addEventListener(VisualizerEvent.GRAPH_FITTED, graphZoomedHandler);
+			diagrammer.addEventListener(VisualizerEvent.GRAPH_ZOOMED, graphZoomedHandler);
+		}
+		protected function loadData():void
+		{
+			importSource =  GraphLibrary.getAsXML(GraphLibrary.DEFAULT_XML);
+		}
+		
+		/* *************
+		* Event Handlers methods
+		**************/
+		
+		/**
+		 * Invoked upon creation of the view.
+		 *
+		 * @param event
+		 */
+		protected function mainView_creationCompleteHandler(event:FlexEvent):void
+		{
+			
+			//Configure Layout options
+			configureLayout();
+			//Configure Rendering
+			configureRendering();
+			//Data Configuration
+			configureData();
+			//Loading Data
+			loadData();
+			//Configure Actions data
+			configureActions();
+			//Creating Event Handlers
+			configureListeners();
+			//Starting real time
+			dataManager.startRealTimeUpdate();
+		}
+
+		/**
+		 * @private
+		 * Updates the current ratio
+		 *
+		 * @param event
+		 */
+		protected function graphZoomedHandler(event:VisualizerEvent):void
+		{
+			_zoomRatio = diagrammer.ratio;
+		}
+
+		/**
+		 * @private
+		 * Handles an error when a layout failed
+		 *
+		 * @param event
+		 */
+		protected function layoutFailedHandler(event:VisualizerEvent):void
+		{
+			if (ArrayUtil.isInArray(
+				[BalloonLayout.ID, RadialLayout.ID],
+				diagrammer.layoutID
+				))
+			{
+				
+				/*
+				* If the current layout is Radial or Balloon, then it failed
+				* due to the 'rootSelectionPolicy' that cannot render a
+				* cyclic graph. So we provide an error popup with a combobox
+				* that permits the user to specify another value for this
+				* property.
+				*/
+				_layoutErrorPopup = PopUpManager.createPopUp(this, ErrorPopupWithOption, true);
+				PopUpManager.centerPopUp(_layoutErrorPopup);
+				ErrorPopupWithOption(_layoutErrorPopup).title = "Error";
+				ErrorPopupWithOption(_layoutErrorPopup).showBtClose = false;
+				ErrorPopupWithOption(_layoutErrorPopup).errorLabel = "This is a cyclic graph. To apply this layout, you need to specify another root selection policy than 'directed'";
+				ErrorPopupWithOption(_layoutErrorPopup).combobox_option.dataProvider = _rootSelectionPolicies;
+				ErrorPopupWithOption(_layoutErrorPopup).addEventListener(Event.CLOSE, closeErrorPopupWithOptionHandler);
+
+				layoutPanel.enableControls = false;
+			}
+			else
+			{
+				_layoutErrorPopup = PopUpManager.createPopUp(this, ErrorPopup, true);
+				PopUpManager.centerPopUp(_layoutErrorPopup);
+				ErrorPopup(_layoutErrorPopup).title = "Error";
+				ErrorPopup(_layoutErrorPopup).showBtClose = false;
+				ErrorPopup(_layoutErrorPopup).errorLabel = "This graph cannot be processed with this layout";
+				ErrorPopup(_layoutErrorPopup).addEventListener(Event.CLOSE, closeErrorPopupHandler);
+
+				layoutPanel.enableControls = false;
+			}
+		}
+
+		protected function layoutSucceedHandler(event:VisualizerEvent):void
+		{
+			layoutPanel.enableControls = true;
+		}
+
+		protected function closeErrorPopupHandler(event:Event):void
+		{
+			PopUpManager.removePopUp(_layoutErrorPopup);
+		}
+
+		protected function closeErrorPopupWithOptionHandler(event:Event):void
+		{
+			var rootSelectionPolicy:int = ErrorPopupWithOption(_layoutErrorPopup).combobox_option.selectedItem.value;
+			layoutPanel.layoutModel.rootSelectionPolicy = rootSelectionPolicy;
+			if (diagrammer.layoutID == RadialLayout.ID)
+			{
+				switch (rootSelectionPolicy)
+				{
+				
+					case RootSelectionType.MOST_CLOSED_ROOT_SELECTION:
+						layoutPanel.radialMostClosed.selected=true;
+						break;
+					case RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION:
+						layoutPanel.radialMostSurrounded.selected=true;
+						break;
+					case RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION:
+						layoutPanel.radialMostWeighted.selected=true;
+						break;
+					
+				}
+				
+			}
+			else
+			{
+				switch (rootSelectionPolicy)	
+				{
+					case RootSelectionType.MOST_CLOSED_ROOT_SELECTION:
+						layoutPanel.mostClosed.selected=true;
+						break;
+					case RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION:
+						layoutPanel.mostSurrounded.selected=true;
+						break;
+					case RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION:
+						layoutPanel.mostWeighted.selected=true;
+						break;
+					
+				}
+				
+			}
+			PopUpManager.removePopUp(_layoutErrorPopup);
+			diagrammer.reLayout();
+		}
+		/**
+		 * @private
+		 * Handles the ELEMENTS_ELEMENTS_CREATED event dispatched by
+		 * the data-visualization component and injects data model to the newly created nodes.
+		 *
+		 * @param event
+		 */
+		protected function datavizComponent_elementCreatedHandler(event:VisualizerEvent):void
+		{
+			var items:Array = event.items;
+			var item:IItem;
+			var l:uint = items.length;
+			var i:uint = 0;
+			for (i; i<l; ++i)
+			{
+				item = items[0];
+				if (item is IDiagramLink)
+				{
+					IDiagramLink(item).dataModel = new NetworkLinkModel();
+					IDiagramLink(item).dataModelID = item.itemID;
+					linkDataModelMap[IDiagramLink(item).dataModelID] = item;
+				}
+			}
+		}
+
+		/**
+		 * @private
+		 * Handles the ELEMENTS_ELEMENTS_DELETED event dispatched by
+		 * the data-visualization component and removes data model references of the deleted nodes.
+		 *
+		 * @param event
+		 */
+		protected function datavizComponent_elementDeletedHandler(event:VisualizerEvent):void
+		{
+			var items:Array = event.items;
+			var item:IItem;
+			var l:uint = items.length;
+			var i:uint = 0;
+			for (i; i<l; ++i)
+			{
+				item = items[0];
+				if (item is IDiagramLink)
+				{
+					delete linkDataModelMap[IDiagramLink(item).dataModelID];
+				}
+			}
+		}
+
+		protected function diagrammer_elementsCreatedHandler(event:VisualizerEvent):void
+		{
+			var items:Array = event.items;
+			var item:IItem;
+			var link:IDiagramLink;
+			for each (item in items)
+			{
+				link = item as IDiagramLink;
+				if (!link || link.dataModel)
+				{
+					continue;
+				}
+				link.dataModel = new NetworkLinkModel();
+				link.dataModelID = link.itemID;
+				linkDataModelMap[link.dataModelID] = link;
+			}
+		}
+
+		protected function this_showAboutInfoHandler(event:Event):void
+		{
+			aboutPanel.open = true;
+		}
+	]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<managers:DataManager id="dataManager" diagrammer="{diagrammer}" />
+	</fx:Declarations>
+	<!-- RIGHT PANEL -->
+	<components2:optionsContent>
+		<overview1:OverviewPanel id="overviewPanel"
+								 ratio="{_zoomRatio}" visualizer="{diagrammer}"
+								 />
+		<layouts:LayoutPanel id="layoutPanel" visualizer="{diagrammer}" />
+	</components2:optionsContent>
+
+	<diagrammer:Diagrammer id="diagrammer"
+						   width="100%" height="100%"
+						   top="40"
+						   layout="hierarchicalCyclic"
+						   elementsCreated="diagrammer_elementsCreatedHandler(event)"
+						   groupLabelField="uid" nodeTooltipFields="description"
+						   />
+
+
+	<!-- TOP MENU BAR -->
+	<menubar:MenuBar id="menubar" width="100%" height="40" visualizer="{diagrammer}" />
+
+	<fx:Declarations>
+		<components2:AboutPanel id="aboutPanel"
+								parentPopUp="{this}" title="About Kalileo Network Demo"
+								>
+			<components2:description>
+				<![CDATA[
+				<br/>This demo is a simple enterprise network application. Kalileo’s Diagrammer component is used in order to provide the ability to add shapes and links on the graph. It focuses on the following features implementation:<br/> 
+				<li><b> Data Model Synchronization:</b> A binding is performed between an external data model and the link decorator. In our case, the used bandwitdh percentage (used / total bandwidth) is diplayed on the links.</li>
+				<li><b> Shortest path:</b> This tool finds the shortest path between two nodes, depending on the algorithm used (here Dijkstra).</li>
+				<li><b> Overview:</b> This tool can be bound to Diagrammer to get an overview of all the nodes, groups and links of the displayed graph. Particularly useful with huge graphs, it allows to zoom in, out, and pan very easily.</li>
+				<li><b> Rendering:</b> Nodes and tooltips have been customized for the purpose of this demo.</li>]]>
+			</components2:description>
+		</components2:AboutPanel>
+	</fx:Declarations>
+</components2:TemplateDemoContainer>

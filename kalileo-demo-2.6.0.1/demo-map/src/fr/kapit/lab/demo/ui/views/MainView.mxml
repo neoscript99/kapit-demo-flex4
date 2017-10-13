@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:TemplateDemoContainer xmlns:components="fr.kapit.lab.demo.common.components.*"
+								  xmlns:config="fr.kapit.lab.demo.data.config.*"
+								  xmlns:fx="http://ns.adobe.com/mxml/2009"
+								  xmlns:graph="fr.kapit.lab.demo.ui.components.graph.*"
+								  xmlns:info="fr.kapit.lab.demo.info.*"
+								  xmlns:managers="fr.kapit.lab.demo.managers.*"
+								  xmlns:map="fr.kapit.lab.demo.ui.components.map.*"
+								  xmlns:map1="fr.kapit.lab.demo.data.map.*"
+								  xmlns:menubar="fr.kapit.lab.demo.ui.components.menubar.*"
+								  xmlns:mx="library://ns.adobe.com/flex/mx"
+								  xmlns:panel="fr.kapit.lab.demo.panel.*"
+								  xmlns:panels="fr.kapit.lab.demo.ui.components.panels.*"
+								  xmlns:s="library://ns.adobe.com/flex/spark"
+								  xmlns:visualizer="fr.kapit.visualizer.*"
+								  showAboutInfo="this_showAboutInfoHandler(event)"
+								  showToggleButtonOptions="false" title="Mapping"
+								  creationComplete="mainView_creationCompleteHandler(event)"
+								  >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.managers.DataManager;
+		import fr.kapit.visualizer.Visualizer;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+
+		import mx.events.FlexEvent;
+		import mx.events.IndexChangedEvent;
+		import mx.events.ResizeEvent;
+		import mx.formatters.NumberBase;
+
+		import spark.events.IndexChangeEvent;
+
+		[Bindable]
+		protected var startYear:Number = 1985;
+
+		[Bindable]
+		protected var endYear:Number = 2010;
+
+		[Bindable]
+		public var visualizer:Visualizer;
+
+		private var _dataFormatter:NumberBase;
+
+		/* ******
+		* Init Handling
+		**********/
+
+		protected function mainView_creationCompleteHandler(event:FlexEvent):void
+		{
+			_dataFormatter = new NumberBase(".", ".", ".", ".");
+			changeRightSidePanels();
+		}
+
+		/* ******
+		* Visualization Handling
+		**********/
+
+		protected function viewsStack_creationCompleteHandler(event:FlexEvent):void
+		{
+			syncVisualization();
+		}
+
+		protected function viewStack_changeHandler(event:IndexChangedEvent):void
+		{
+			syncVisualization();
+		}
+
+		protected function syncVisualization():void
+		{
+			var newVisualizer:Visualizer = viewStack.selectedIndex==0 ? mapVisualizer : graphVisualizer;
+			if (visualizer != newVisualizer)
+			{
+				visualizer = newVisualizer;
+			}
+		}
+
+		protected function hSlider_dataTipFormatFunction(value:Number):String
+		{
+			return _dataFormatter.formatPrecision(String(value), 0);
+		}
+
+		protected function this_showAboutInfoHandler(event:Event):void
+		{
+			aboutPanel.open = true;
+		}
+
+		protected function viewMenuBar_changeHandler(event:IndexChangeEvent):void
+		{
+			viewStack.selectedIndex = event.newIndex;
+			syncVisualization();
+			changeRightSidePanels();
+		}
+
+		private function changeRightSidePanels():void
+		{
+			if (viewStack.selectedIndex == 1)
+			{
+				openOptions = true;
+			}
+			else
+			{
+				openOptions = false;
+			}
+		}
+	]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<map1:MapDataProvider id="dataProvider" />
+		<config:MapParams id="mapParams" />
+		<managers:DataManager id="dataManager" dataProvider="{dataProvider}" />
+	</fx:Declarations>
+
+	<components:optionsContent>
+		<panels:LayoutPanel id="layoutPanel" visualizer="{visualizer}" />
+		<panels:OverviewPanel id="overviewPanel" visualizer="{visualizer}" />
+	</components:optionsContent>
+
+	<s:VGroup width="100%" height="100%" gap="0">
+		<!-- TOP MENU BAR -->
+		<menubar:ViewMenuBar id="viewMenuBar"
+							 width="100%" height="40"
+							 change="viewMenuBar_changeHandler(event)"
+							 />
+		<!-- Visualization window -->
+		<mx:ViewStack id="viewStack"
+					  width="100%" height="100%"
+					  creationComplete="viewsStack_creationCompleteHandler(event)"
+					  change="viewStack_changeHandler(event)"
+					  >
+			<s:NavigatorContent width="100%" height="100%">
+
+				<map:MapVisualizer id="mapVisualizer"
+								   width="100%" height="100%"
+								   linksDataProvider="{dataProvider.flightRoadsDataProvider}"
+								   mapParams="{mapParams}"
+								   nodesDataProvider="{dataProvider.airportsDataProvider}"
+								   />
+				<map:Legend width="160" right="6" top="6" />
+			</s:NavigatorContent>
+			<s:NavigatorContent width="100%" height="100%">
+				<graph:GraphVisualizer id="graphVisualizer"
+									   width="100%" height="100%"
+									   ignoreGrouping="true"
+									   linksDataProvider="{dataProvider.flightRoadsDataProvider}"
+									   nodesDataProvider="{dataProvider.airportsDataProvider}"
+									   />
+			</s:NavigatorContent>
+		</mx:ViewStack>
+	</s:VGroup>
+
+	<fx:Declarations>
+		<components:AboutPanel id="aboutPanel"
+							   parentPopUp="{this}" title="About Kalileo Map Demo"
+							   >
+			<components:description>
+				<![CDATA[
+				<br/>This demo is a map application. Kalileo’s Visualizer component is used in order to show airports and flights between destinations. It focuses on the following features implementation:<br/>
+				<li><b> Custom Layers:</b> Using custom layering feature on Kalileo, a map component is able to drive all Visualizer interactions.</li>
+				<li><b> Custom Rendering and Binding:</b> Airports, flights and clusters are visually data driven via Binding.</li>
+				<li><b> Data Driven visual control :</b> Using nodesDataProvider and linksDataProvider, the visual output of the graph is totally controller by the data input. Any modification in the data providers alters directly the visual output.</li>
+				<li><b> Morphing:</b> By taking profit from the morphing feature of renderers, the visual output of an entity changes according to the zoom level and expand/Collapse events.</li>
+				<br/>
+				
+				<p>Note that the demo is a proof of concept and that the data used is generated and don't reflect a real flight road map scenario.</p>
+				
+				]]>
+			</components:description>
+		</components:AboutPanel>
+	</fx:Declarations>
+
+</components:TemplateDemoContainer>

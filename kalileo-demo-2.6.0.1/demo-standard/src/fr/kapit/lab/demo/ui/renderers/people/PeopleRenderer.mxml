@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="50" height="50"
+		 implements="fr.kapit.visualizer.renderers.IRenderer, fr.kapit.diagrammer.renderers.IEditable, fr.kapit.visualizer.renderers.IAnchorable" 
+		 xmlns:data="fr.kapit.visualizer.utils.data.*">
+	<fx:Script>
+		<![CDATA[
+			import fr.kapit.lab.demo.data.PeopleData;
+			import fr.kapit.visualizer.base.IItem;
+			import fr.kapit.visualizer.utils.data.AnchorsDescriptor;
+			
+			
+			/* *********
+			* IAnchorable interface
+			**************/
+			[Bindable]
+			private var anchorPoints:Vector.<Number> = Vector.<Number>([0,0.5,0.5,0,1,0.5,0.5,1]);
+			public function get anchors():AnchorsDescriptor
+			{
+				return anchorsDescriptor; 	// Can be extracted from data also if 
+											// a ports property is set
+			}
+			public function set anchors(value:AnchorsDescriptor):void
+			{
+				anchorsDescriptor = value;
+			}
+			
+			public function get useStrictAnchoring():Boolean
+			{
+				return false;
+			}
+			public function set useStrictAnchoring(value:Boolean):void
+			{
+				//No need for settings
+			}
+			
+			/* *********
+			* IEdiatble interface
+			**************/
+			
+			protected var _dataModel:Object;
+			/**
+			 * @inheritDoc
+			 */	
+			public function get dataModel():Object
+			{
+				return _dataModel;
+			}
+			public function set dataModel(value:Object):void
+			{
+				_dataModel = value;
+			}
+			
+			protected var _isSizeFixed:Boolean;
+			/**
+			 * @inheritDoc
+			 */		
+			public function get isSizeFixed():Boolean
+			{
+				return _isSizeFixed;
+			}
+			public function set isSizeFixed(value:Boolean):void
+			{
+				_isSizeFixed = value;
+			}
+			
+			protected var _limitHeight:Number= 32;
+			
+			public function get limitHeight():Number
+			{
+				return _limitHeight;
+			}
+			
+			protected var _limitWidth:Number= 32;
+			
+			public function get limitWidth():Number
+			{
+				return _limitWidth
+			}
+			
+			protected var _prohibitLinkingFrom:Boolean;
+			/**
+			 * @inheritDoc
+			 */		
+			public function get prohibitLinkingFrom():Boolean
+			{
+				return _prohibitLinkingFrom;
+			}
+			public function set prohibitLinkingFrom(value:Boolean):void
+			{
+				_prohibitLinkingFrom = value;
+			}
+			
+			
+			protected var _prohibitLinkingTo:Boolean;
+			/**
+			 * @inheritDoc
+			 */		
+			public function get prohibitLinkingTo():Boolean
+			{
+				return _prohibitLinkingTo;
+			}
+			public function set prohibitLinkingTo(value:Boolean):void
+			{
+				_prohibitLinkingTo = value;
+			}
+			
+			/* *********
+			* IRenderer interface
+			**************/
+			
+			protected var _data:Object;
+			[Bindable]
+			/* protected var _peopleData:PeopleData; */
+			protected var _icon:Class;
+			public function get icon():Class
+			{
+				return icon;
+			}
+			public function set icon(value:Class):void
+			{
+				_icon=value;
+			}
+			public function get data():Object
+			{
+				return _data;
+			}
+			public function set data(value:Object):void
+			{
+				_data = value;
+				 icon=_data.imageClass;
+			}
+			
+			protected var _isFixed:Boolean;
+			/**
+			 * @inheritDoc
+			 */			
+			public function get isFixed():Boolean
+			{
+				return _isFixed;
+			} 
+			public function set isFixed(value:Boolean):void
+			{
+				_isFixed = value;
+			}
+			
+			protected var _item:IItem;
+			/**
+			 * @inheritDoc
+			 */			
+			public function get item():IItem
+			{
+				return _item;
+			}
+			public function set item(value:IItem):void
+			{
+				_item = value;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<data:AnchorsDescriptor id="anchorsDescriptor" type="{AnchorsDescriptor.ANCHORS_TYPE_LIST}" anchorPoints="{anchorPoints}"/>
+	</fx:Declarations>
+	<mx:Image source="{_icon}" width="100%" height="100%" verticalAlign="middle" horizontalAlign="center"/>
+</s:Group>

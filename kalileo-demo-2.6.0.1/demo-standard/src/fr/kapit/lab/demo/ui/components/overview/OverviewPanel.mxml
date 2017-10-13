@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel implements="fr.kapit.lab.demo.ui.components.IConfigPanel"
+						 xmlns:component="fr.kapit.lab.demo.panel.component.*"
+						 xmlns:components="fr.kapit.lab.demo.common.components.*"
+						 xmlns:forms="fr.kapit.lab.demo.forms.*"
+						 xmlns:fx="http://ns.adobe.com/mxml/2009"
+						 xmlns:mx="library://ns.adobe.com/flex/mx"
+						 xmlns:overview="fr.kapit.visualizer.tools.overview.*"
+						 xmlns:s="library://ns.adobe.com/flex/spark"
+						 width="100%"
+						 title="Overview"
+						 >
+
+	
+	<fx:Library>
+		<fx:Definition name="HSeparator">
+			<s:Group width="100%" height="1">
+				<s:Rect left="0" right="0" top="0" bottom="0">
+					<s:fill>
+						<s:SolidColor color="0x9E9E9E" />
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+		</fx:Definition>
+	</fx:Library>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.model.DiagrammerModel;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		
+		import mx.events.FlexEvent;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(value:ApplicationModel):void
+		{
+			_applicationModel = value;
+		}
+
+		/**
+		 * Returns the current diagrammer model.
+		 */
+		public function get diagrammerModel():DiagrammerModel
+		{
+			if (null == appModel)
+			{
+				return null;
+			}
+			return appModel.diagrammerModel;
+		}
+
+		[Bindable]
+		public var ratio:Number;
+
+		/**
+		 * Change handler on zoom slider
+		 */
+		protected function slider_changeHandler(event:Event):void
+		{
+			diagrammerModel.zoom(slider.value);
+		}
+		/**
+		 * Change handler on zoom slider
+		 */
+		protected function onZoomOutImageClicked(event:MouseEvent):void
+		{
+			
+			 slider.value -=0.2 
+			diagrammerModel.zoom(slider.value);
+		}
+		/**
+		 * Change handler on zoom slider
+		 */
+		protected function onZoomInImageClicked(event:MouseEvent):void
+		{
+			 slider.value +=0.2; 
+			diagrammerModel.zoom(slider.value);
+		}
+	]]>
+	</fx:Script>
+
+	<s:VGroup width="100%" top="6" bottom="6" paddingBottom="-6">
+		<s:HGroup width="100%" gap="0">
+			<overview:Overview width="100%" height="90"
+							   visualizer="{appModel.diagrammer}"
+							   />
+		</s:HGroup>
+		<s:VGroup paddingLeft="-10" gap="0" width="100%" paddingRight="-10" paddingBottom="4">
+			<fx:HSeparator />
+		</s:VGroup>
+		<s:HGroup width="100%" verticalAlign="middle" gap="14">
+			<s:Image  source="{EmbeddedAssets.IMG_ZOOM_OUT}" click="onZoomOutImageClicked(event)"/>
+			<components:HRangeSlider id="slider"
+									 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkinWithoutValues"
+									 width="100%"
+									 maximum="10" minimum="0.1" showDataTip="false"
+									 value="{ratio}"
+									 stepSize="0.1"
+									 bigTickInterval="5"
+									 tickNumber="11"
+									 change="slider_changeHandler(event)"
+									 />
+			<s:Image  source="{EmbeddedAssets.IMG_ZOOM_IN}"  click="onZoomInImageClicked(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+
+</components:OptionsPanel>

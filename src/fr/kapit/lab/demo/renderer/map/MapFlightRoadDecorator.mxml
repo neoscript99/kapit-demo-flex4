@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group implements="fr.kapit.visualizer.renderers.IDecoratorRenderer, fr.kapit.visualizer.renderers.IMorphable"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:skins="fr.kapit.lab.demo.skins.*"
+		 width="124" height="60"
+		 >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.data.map.MapAirport;
+		import fr.kapit.lab.demo.data.map.MapFlightRoad;
+		import fr.kapit.lab.demo.managers.AssetsManager;
+		import fr.kapit.lab.demo.ui.components.map.MapVisualizer;
+		import fr.kapit.visualizer.base.IItem;
+		import fr.kapit.visualizer.base.ILink;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.constants.ClippingShapeConstants;
+		import fr.kapit.visualizer.utils.GeometryUtils;
+
+		import mx.core.UIComponent;
+
+		import spark.filters.ColorMatrixFilter;
+
+		/* ***************
+		* IDecorator implementation
+		*****************/
+		protected var _anchorX:Number=0;
+
+		public function get anchorX():Number
+		{
+			return getAnchoring().x;
+		}
+
+		public function set anchorX(value:Number):void
+		{
+			_anchorX = value;
+		}
+
+		protected var _anchorY:Number=0;
+
+		public function get anchorY():Number
+		{
+			return getAnchoring().y;
+		}
+
+		public function set anchorY(value:Number):void
+		{
+			_anchorY = value;
+		}
+
+		protected var _data:Object;
+
+		[Bindable]
+		protected var _mapFlightRoad:MapFlightRoad;
+
+		public function get data():Object
+		{
+			return _data;
+		}
+
+		public function set data(value:Object):void
+		{
+			_data = value;
+			_mapFlightRoad = MapFlightRoad(value);
+		}
+
+		protected var _isFixed:Boolean = true;
+
+		public function get isFixed():Boolean
+		{
+			return _isFixed;
+		}
+
+		public function set isFixed(value:Boolean):void
+		{
+			_isFixed = value;
+		}
+
+		[Bindable]
+		protected var _decoratorLabel:String;
+
+		protected var _item:IItem;
+
+		protected var _link:ILink;
+
+		protected var _visualizer:MapVisualizer;
+
+		public function get item():IItem
+		{
+			return _item;
+		}
+
+		public function set item(value:IItem):void
+		{
+			_item = value;
+			_link = ILink(_item);
+			_visualizer = _item.visualizer as MapVisualizer;
+			registerBindings();
+		}
+
+		/* ***************
+		* IMorphable implementation
+		*****************/
+
+		protected var _clippingShape:String = ClippingShapeConstants.COMPACT_CIRCLE;
+
+		public function get clippingShape():String
+		{
+			return _clippingShape;
+		}
+
+		public function set clippingShape(value:String):void
+		{
+			_clippingShape = value;
+		}
+
+		protected var _isMorphDirty:Boolean = true;
+
+		protected var _ratio:Number;
+
+		public function set isMorphDirty(value:Boolean):void
+		{
+			_isMorphDirty = value;
+			_ratio = _item.visualizer.ratio;
+		}
+
+		protected var linkAngle:Number=0;
+
+		/* ******
+		* Overriden methods
+		**************/
+
+		protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+		{
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+			if (_isMorphDirty)
+			{
+				updateRotation();
+				_isMorphDirty = false;
+			}
+		}
+
+		/* ******
+		* Helper methods
+		**************/
+		private function getAnchoring():Point
+		{
+			if (_visualizer.ratio > _visualizer.countryZoomRatio)
+			{
+				visible = false;
+				anchor = new Point(0,0);
+			}
+			else
+			{
+				var anchor:Point;
+				var ctrlPoints:Vector.<Number> = _link.path;
+				var ctrlPointsLength:uint = ctrlPoints.length;
+				var linkAngle:Number = Math.atan2(ctrlPoints[3]-ctrlPoints[1],ctrlPoints[2]-ctrlPoints[0]);
+
+				var viewBounds:Rectangle = new Rectangle(0,0,_visualizer.width,_visualizer.height);
+				var source:ISprite = _link.source;
+				var sourceInpactPoint:Point = new Point(ctrlPoints[0],ctrlPoints[1]);
+				var sourceBounds:Rectangle = new Rectangle(source.x,source.y,source.scaledWidth,source.scaledHeight)
+				var sourceInView:Boolean =  viewBounds.containsRect(sourceBounds);
+				var target:ISprite = _link.target;
+				var targetImpactPoint:Point = new Point(ctrlPoints[ctrlPointsLength-2],ctrlPoints[ctrlPointsLength-1]);
+				var middlePoint:Point = new Point((ctrlPoints[0]+ctrlPoints[ctrlPointsLength-2])*0.5,(ctrlPoints[1]+ctrlPoints[ctrlPointsLength-1])*0.5);
+				var intersectionPoint:Point = GeometryUtils.intersectSegmentToRectangle(sourceInpactPoint.x, sourceInpactPoint.y, targetImpactPoint.x, targetImpactPoint.y, viewBounds);
+
+				if (!intersectionPoint)
+				{
+					visible = false;
+					anchor = new Point(0,0);
+				}
+				else
+				{
+					var boundsFactor:Number = sourceInView ? 1 : -1 ;
+					intersectionPoint.x -= boundsFactor * width * scaleX *Math.cos(linkAngle)*0.5;
+					intersectionPoint.y -= boundsFactor *height * scaleY *Math.sin(linkAngle)*0.5;
+					visible = true;
+					if (!sourceInView)
+					{
+						_decoratorLabel = MapAirport(source.data).country;
+					}
+					else
+					{
+						_decoratorLabel = MapAirport(target.data).country;
+					}
+					anchor = new Point(intersectionPoint.x-middlePoint.x, intersectionPoint.y-middlePoint.y);
+				}
+
+			}
+
+			return anchor;
+		}
+
+		private var lastAngle:Number=0;
+
+		private function updateRotation():void
+		{
+			var ctrlPoints:Vector.<Number> = _link.path;
+			var linkAngle:Number = Math.atan2(ctrlPoints[ctrlPoints.length-1]-ctrlPoints[1],ctrlPoints[ctrlPoints.length-2]-ctrlPoints[0]);
+			if (lastAngle==linkAngle)
+			{
+				return;
+			}
+			rotateElement(container,linkAngle);
+			lastAngle = linkAngle;
+		}
+
+		private function rotateElement(entity:UIComponent,angle:Number):void
+		{
+			var offsetWidth:Number = entity.width*0.5;
+			var offsetHeight:Number =  entity.height*0.5;
+			var matrix:Matrix = new Matrix();
+			if (angle>Math.PI*0.5)
+			{
+				label.rotation = 180
+			}
+			matrix.translate(-offsetWidth, -offsetHeight);
+			matrix.rotate(angle);
+			matrix.translate(+offsetWidth, +offsetHeight);
+			matrix.concat(entity.transform.matrix);
+			entity.transform.matrix = matrix;
+		}
+
+		protected function registerBindings():void
+		{
+
+		}
+	]]>
+	</fx:Script>
+
+	<s:VGroup id="container"
+			  width="100%" height="100%"
+			  horizontalAlign="center" verticalAlign="middle"
+			  gap="-15"
+			  >
+		<s:Label id="label"
+				 width="100"
+				 left="48"
+				 color="0x5397B0" fontSize="16" verticalAlign="middle"
+				 text="{_decoratorLabel}"
+				 />
+		<skins:AirplaneDecorator width="24" height="24" rotation="180" />
+	</s:VGroup>
+</s:Group>

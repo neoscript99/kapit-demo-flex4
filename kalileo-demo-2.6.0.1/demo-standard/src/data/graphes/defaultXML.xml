@@ -1,0 +1,55 @@
+<graphml>
+	<node id="n1" label="America" layout="hierarchicalTree">
+		<graph id="n1:" edgedefault="undirected">
+			<node id="n1::n1" label="Ferdinand"/>
+			<node id="n1::n2" label="Suzan"/>
+			<node id="n1::n3" label="Sony"/>
+			<node id="n1::n4" label="John"/>
+			<node id="n1::n5" label="Yohan"/>
+			<edge id="e10" source="n1::n1" target="n1::n3"/>
+			<edge id="e11" source="n1::n1" target="n1::n2"/>
+			<edge id="e12" source="n1::n2" target="n1::n4"/>
+			<edge id="e13" source="n1::n2" target="n1::n5"/>
+		</graph>
+	</node>
+	<node id="n2" label="Africa" layout="singleCircular">
+		<graph id="n2:" edgedefault="undirected">
+			<node id="n2::n1" label="Jack"/>
+			<node id="n2::n2" label="Samuel"/>
+			<node id="n2::n3" label="Mohamed"/>
+			<node id="n2::n4" label="Sacko"/>
+			<node id="n2::n5" label="Ciro"/>
+			<node id="n2::n6" label="Yakobo"/>
+			<node id="n2::n7" label="Ibrahim"/>
+			<node id="n2::n8" label="Ida"/>
+			<node id="n2::n9" label="Salom"/>
+			<node id="n2::n10" label="Dida"/>
+			<node id="n2::n11" label="Majid"/>
+			<node id="n2::n12" label="Hakim"/>
+			<node id="n2::n13" label="Patrice"/>
+			<edge id="e30" source="n2::n1" target="n2::n3"/>
+			<edge id="e31" source="n2::n1" target="n2::n2"/>
+			<edge id="e32" source="n2::n1" target="n2::n4"/>
+			<edge id="e33" source="n2::n2" target="n2::n5"/>
+			<edge id="e34" source="n2::n2" target="n2::n6"/>
+			<edge id="e35" source="n2::n2" target="n2::n7"/>
+			<edge id="e36" source="n2::n3" target="n2::n8"/>
+			<edge id="e37" source="n2::n3" target="n2::n9"/>
+			<edge id="e38" source="n2::n3" target="n2::n10"/>
+			<edge id="e39" source="n2::n4" target="n2::n11"/>
+			<edge id="e310" source="n2::n4" target="n2::n12"/>
+			<edge id="e311" source="n2::n4" target="n2::n13"/>
+		</graph>
+	</node>
+	<node id="n3" label="The Social Root"/>
+	<node id="n4" label="Social Connections"/>
+	<node id="n5" label="Travel Fans"/>
+	<node id="n6" label="Public Storage"/>
+	<node id="n7" label="professional connections"/>
+	<edge id="e1" source="n1::n4" target="n5"/>
+	<edge id="e2" source="n1::n4" target="n4"/>
+	<edge id="e6" source="n2::n5" target="n6"/>
+	<edge id="e7" source="n1::n4" target="n7"/>
+	<edge id="e8" source="n3" target="n1::n1"/>
+	<edge id="e9" source="n3" target="n2::n11"/>
+</graphml>

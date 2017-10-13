@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkButtonSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		           xmlns:s="library://ns.adobe.com/flex/spark" 
+		           minWidth="18" minHeight="18" 
+		           alpha.disabled="0.5">
+     
+    <fx:Metadata>[HostComponent("spark.components.Button")]</fx:Metadata>
+    
+    <!-- states -->
+    <s:states>
+        <s:State name="up" />
+        <s:State name="over" />
+        <s:State name="down" />
+        <s:State name="disabled" />
+    </s:states>
+    
+	<s:Group>
+		<s:Ellipse height="18" width="18">
+			<s:fill>
+				<s:SolidColor color="0xFFFFFF"/>
+			</s:fill>
+			<s:filters>
+				<s:DropShadowFilter alpha="0.6" angle="-90" blurX="0" blurY="0" distance="1" quality="2"/>
+			</s:filters>
+		</s:Ellipse>
+		<s:Group x="5" y="5">
+			<s:Line x="1" xTo="6" y="1" yTo="6">
+				<s:stroke>
+					<s:SolidColorStroke color="#4F4F4F" miterLimit="10" weight="2"/>
+				</s:stroke>
+			</s:Line>
+			<s:Line x="1" xTo="6" y="1" yFrom="6">
+				<s:stroke>
+					<s:SolidColorStroke color="#4F4F4F" miterLimit="10" weight="2"/>
+				</s:stroke>
+			</s:Line>
+		</s:Group>
+	</s:Group>
+    
+</s:SparkButtonSkin>

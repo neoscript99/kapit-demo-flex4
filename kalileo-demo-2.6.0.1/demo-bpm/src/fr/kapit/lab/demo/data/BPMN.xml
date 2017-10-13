@@ -1,0 +1,123 @@
+<diagram ratio="1.0862068965517242" layout="orthogonal">
+  <table id="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" dx="10" dy="71.75" lanesDepth="2" columnsDepth="0" width="1160.00" height="626.00" cellsMinWidth="600" cellsMinHeight="100">
+    <column id="C0" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" dx="80" dy="0" width="1080.00" height="626.00" title="  "/>
+    <lane id="L2" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" dx="0" dy="0" width="1160.00" height="414.00" title="Retailer">
+      <lanes>
+        <lane id="L20" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" dx="40" dy="0" width="1120.00" height="190.00" title="Distribution"/>
+        <lane id="L21" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" dx="40" dy="190" width="1120.00" height="224.00" title="Sales"/>
+      </lanes>
+    </lane>
+    <lane id="L4" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" dx="0" dy="414" width="1160.00" height="212.00" title="Financial Institution">
+      <lanes>
+        <lane id="L43" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" dx="40" dy="414" width="1120.00" height="212.00" title="Financial Institution"/>
+      </lanes>
+    </lane>
+    <tabcell id="L43C0" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" lane="L43" column="C0" dx="80" dy="414" width="1080.00" height="212.00">
+      <sprite>
+        <node id="G0-node12" dx="476.80" dy="552.75" width="40.00" height="40.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="circle_1" label=" " description=""/>
+        </node>
+        <node id="G0-node1" dx="832.00" dy="563.65" width="40.00" height="40.00" anchorX="-18.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="circle_0" label="End" description=""/>
+        </node>
+        <node id="G0-node13" dx="588.15" dy="552.75" width="77.00" height="52.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="rectrounded" label="Authorize&#xD;Payment" description=""/>
+        </node>
+      </sprite>
+    </tabcell>
+    <tabcell id="L21C0" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" lane="L21" column="C0" dx="80" dy="190" width="1080.00" height="224.00">
+      <sprite>
+        <node id="G0-node0" dx="111.85" dy="317.10" width="40.00" height="40.00" anchorX="-15.50" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="circle_0" label="Start" description=""/>
+        </node>
+        <node id="G0-node10" dx="349.75" dy="323.65" width="40.00" height="40.00" anchorX="0.00" anchorY="-1.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="losange_3" label=" " description=""/>
+        </node>
+        <node id="G0-node11" dx="607.15" dy="384.45" width="40.00" height="40.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="circle_1" label=" " description=""/>
+        </node>
+        <node id="G0-node4" dx="210.15" dy="307.35" width="75.00" height="66.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="rectrounded" label="Identify&#xD;Payment&#xD;Method" description=""/>
+        </node>
+        <node id="G0-node6" dx="441.00" dy="261.70" width="96.00" height="52.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="rectrounded" label="Accept Cash&#xD;or Check" description=""/>
+        </node>
+        <node id="G0-node5" dx="446.40" dy="381.20" width="90.00" height="52.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="rectrounded" label="Authorized&#xD;Credit Card" description=""/>
+        </node>
+        <node id="G0-node7" dx="693.50" dy="382.30" width="87.00" height="52.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="rectrounded" label="Process&#xD;Credit Card" description=""/>
+        </node>
+      </sprite>
+    </tabcell>
+    <tabcell id="L20C0" table="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0" lane="L20" column="C0" dx="80" dy="0" width="1080.00" height="190.00">
+      <sprite>
+        <node id="G0-node8" dx="835.25" dy="123.80" width="92.00" height="66.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="rectrounded" label="Prepare&#xD;Package for&#xD;Customer" description=""/>
+        </node>
+        <node id="G0-node9" dx="1022.10" dy="121.65" width="88.00" height="66.00" anchorX="0.00" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="rectrounded" label="Deliver&#xD;Package to&#xD;Customer" description=""/>
+        </node>
+        <node id="G0-node2" dx="1188.30" dy="134.65" width="40.00" height="40.00" anchorX="-16.50" anchorY="0.00" groupID="BF4EF6E1-1FB5-085D-0D23-EB4D3C7685F0">
+          <data renderer="circle_0" label=" End" description=""/>
+        </node>
+      </sprite>
+    </tabcell>
+  </table>
+  <link id="G0-node6->G0-node8" controlPoints="503.14,361.75,587.86,361.75,587.86,231.43,895.26,231.43" target="G0-node8" source="G0-node6" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node0->G0-node4" controlPoints="143.60,410.63,260.91,410.63,260.91,414.97" target="G0-node4" source="G0-node0" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node9->G0-node2" controlPoints="1079.91,229.26,1220.03,229.26,1220.03,228.17" target="G0-node2" source="G0-node9" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node13->G0-node1" controlPoints="640.00,652.85,863.76,652.85,863.76,657.19" target="G0-node1" source="G0-node13" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node10->G0-node6" controlPoints="381.48,417.14,381.48,357.40,503.14,357.40,503.14,361.75" target="G0-node6" source="G0-node10" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label="Check for Cash"/>
+  </link>
+  <link id="G0-node11->G0-node7" controlPoints="638.91,477.97,750.79,477.97,750.79,482.32" target="G0-node7" source="G0-node11" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node5->G0-node12" controlPoints="505.31,481.23,505.31,646.33,508.57,646.33" target="G0-node12" source="G0-node5" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label="Request"/>
+  </link>
+  <link id="G0-node10->G0-node5" controlPoints="381.48,417.14,381.48,480.14,505.31,480.14,505.31,481.23" target="G0-node5" source="G0-node10" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label="Credit Card"/>
+  </link>
+  <link id="G0-node7->G0-node8" controlPoints="750.79,482.32,811.62,482.32,811.62,231.43,895.26,231.43" target="G0-node8" source="G0-node7" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node4->G0-node10" controlPoints="260.91,414.97,381.48,414.97,381.48,417.14" target="G0-node10" source="G0-node4" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node5->G0-node11" controlPoints="505.31,481.23,638.91,481.23,638.91,477.97" target="G0-node11" source="G0-node5" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node13->G0-node11" controlPoints="640.00,652.85,640.00,477.97,638.91,477.97" target="G0-node11" source="G0-node13" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label="Response"/>
+  </link>
+  <link id="G0-node12->G0-node13" controlPoints="508.57,646.33,640.00,646.33,640.00,652.85" target="G0-node13" source="G0-node12" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+  <link id="G0-node8->G0-node9" controlPoints="895.26,231.43,1079.91,231.43,1079.91,229.26" target="G0-node9" source="G0-node8" anchorX="0.00" anchorY="0.00" linkLine="4">
+    <style arrowTargetType="arrow"/>
+    <data label=""/>
+  </link>
+</diagram>

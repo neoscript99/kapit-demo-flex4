@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<base:BaseAirportRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  xmlns:base="fr.kapit.lab.demo.renderer.base.*"
+						  implements="fr.kapit.visualizer.renderers.IMorphable"
+						  isFixed="true">
+	<fx:Script>
+		<![CDATA[
+			import fr.kapit.visualizer.actions.ZoomAction;
+			import fr.kapit.visualizer.base.ISprite;
+			import fr.kapit.visualizer.constants.ClippingShapeConstants;
+			
+			/* ***************
+			* IMorphable implementation
+			*****************/
+			
+			protected var _clippingShape:String = ClippingShapeConstants.COMPACT_CIRCLE;
+			public function get clippingShape():String
+			{
+				return _clippingShape;
+			}
+			public function set clippingShape(value:String):void
+			{
+				_clippingShape = value;
+			}
+			
+			protected var _isMorphDirty:Boolean = true;
+			protected var _ratio:Number;
+			private var lastWidth:Number;
+			private var lastHeight:Number;
+			public function set isMorphDirty(value:Boolean):void
+			{
+				_isMorphDirty = value;
+				_ratio = _item.visualizer.ratio;
+			}
+			
+			/* ******
+			* Overriden methods
+			**************/
+			
+			protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				if(_isMorphDirty)
+				{
+					if(_supportLevelOfDeltails)
+						_item.visualizer.messageAction(ZoomAction.ID, 'Pause');
+					updateLevelOfDetail();
+					_isMorphDirty = false;
+				}
+				if(_supportLevelOfDeltails)
+					_item.visualizer.messageAction(ZoomAction.ID, 'Resume');
+				
+				if(ISprite(_item).isVisibleInContainer && (lastHeight != unscaledHeight || lastWidth != unscaledWidth))
+					updateRing(null);
+				
+				lastWidth = unscaledWidth;
+				lastHeight = unscaledHeight;
+				
+			}
+			
+			private function updateLevelOfDetail():void
+			{
+				//Decorator update	
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</base:BaseAirportRenderer>

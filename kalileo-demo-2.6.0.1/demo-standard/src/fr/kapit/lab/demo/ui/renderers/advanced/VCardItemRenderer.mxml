@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ns="http://www.kapit.fr/flex4/ui"
+		 xmlns:renderers="fr.kapit.lab.demo.ui.renderers.*"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 implements="fr.kapit.visualizer.renderers.IRenderer, fr.kapit.visualizer.renderers.ISelectable, fr.kapit.visualizer.renderers.IAnchorable"
+		 width="270" height="94" 
+		 currentState="normal"
+		 creationComplete="this_creationCompleteHandler(event)" xmlns:data="fr.kapit.visualizer.utils.data.*">
+
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.lab.demo.data.VCardData;
+		import fr.kapit.visualizer.base.IItem;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.utils.data.AnchorsDescriptor;
+		
+		import mx.events.FlexEvent;
+		
+		import spark.events.IndexChangeEvent;
+		import spark.events.TextOperationEvent;
+
+		[Bindable]
+		public var _vCardImage:Class = EmbeddedAssets.FACE_0_60;
+
+		protected var _isEditionRequested:Boolean=false;
+		protected var _rendererStateChanged:Boolean;
+		public function get isEditionRequested():Boolean
+		{
+			return _isEditionRequested;
+		}
+		
+		public function set isEditionRequested(value:Boolean):void
+		{
+			_isEditionRequested = value;
+			_rendererStateChanged = true;
+			invalidateProperties();
+		}
+		/* *********
+		* IAnchorable interface
+		**************/
+		
+		[Bindable]
+		private var anchorPoints:Vector.<Number> = Vector.<Number>([0,0.5,0.5,0,1,0.5,0.5,1]);
+		public function get anchors():AnchorsDescriptor
+		{
+			return anchorsDescriptor; 	// Can be extracted from data also if 
+										// a ports property is set
+		}
+		public function set anchors(value:AnchorsDescriptor):void
+		{
+			anchorsDescriptor = value;
+		}
+		
+		public function get useStrictAnchoring():Boolean
+		{
+			return false;
+		}
+		public function set useStrictAnchoring(value:Boolean):void
+		{
+			//No need for settings
+		}
+		
+		/* *******
+		 * IRenderer impl
+		 *************/
+
+		protected var _data:Object;
+		[Bindable]
+		protected var _vCardData:VCardData;
+
+		public function get data():Object
+		{
+			return _data;
+		}
+
+		public function set data(value:Object):void
+		{
+			_data = value;
+			_vCardData = _data as VCardData;
+			if(_vCardData)
+				_vCardImage = EmbeddedAssets["FACE_"+_vCardData.imageNumber+"_60"];
+		}
+
+		protected var _isFixed:Boolean;
+
+		public function get isFixed():Boolean
+		{
+			return _isFixed;
+		}
+
+		public function set isFixed(value:Boolean):void
+		{
+			_isFixed = value;
+		}
+
+		protected var _item:IItem;
+
+		protected var _sprite:ISprite;
+
+		public function get item():IItem
+		{
+			return _item;
+		}
+
+		public function set item(value:IItem):void
+		{
+			_item = value;
+			_sprite = _item as ISprite;
+		}
+
+		/* *******
+		* ISelectable impl
+		*************/
+
+		protected var _isHighlighted:Boolean;
+		public function set isHighlighted(value:Boolean):void
+		{
+			_isHighlighted = value;
+		}
+
+		protected var _isSelected:Boolean;
+		public function set isSelected(value:Boolean):void
+		{
+			_isSelected = value;
+			_rendererStateChanged = true;
+			invalidateProperties();
+		}
+		
+		/* *******
+		* Overriden Methods
+		*************/
+		
+		protected override function commitProperties():void
+		{
+			super.commitProperties();
+			if(_rendererStateChanged)
+			{
+				commitRendererStates();
+				_rendererStateChanged = false;
+			}
+		}
+		
+		/* *******
+		* Helper Methods
+		*************/
+
+		protected function commitRendererStates():void
+		{
+			if(!_isSelected && _isEditionRequested)
+				_isEditionRequested = false;
+			currentState = (_isEditionRequested) ? "editing" : "normal";
+			isFixed = (currentState == "editing")
+		}
+		
+		/* *******
+		* Event Handlers
+		*************/
+		
+		protected function jobTxt_changeHandler(event:TextOperationEvent):void
+		{
+			_vCardData.job = jobTxt.text;
+		}
+		protected function nameTxt_changeHandler(event:TextOperationEvent):void
+		{
+
+			_vCardData.name = nameTxt.text;
+		}
+		protected function this_doubleClickHandler(event:MouseEvent):void
+		{
+			isEditionRequested=true;
+		}
+		protected function this_creationCompleteHandler(event:FlexEvent):void
+		{
+			addEventListener(MouseEvent.DOUBLE_CLICK, this_doubleClickHandler);
+		}
+		protected function faceDropDownList_changeHandler(event:IndexChangeEvent):void
+		{
+			_vCardData.imageNumber = faceDropDownList.selectedIndex;
+			_vCardImage = EmbeddedAssets["FACE_"+_vCardData.imageNumber+"_60"];
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<data:AnchorsDescriptor id="anchorsDescriptor" type="{AnchorsDescriptor.ANCHORS_TYPE_LIST}" anchorPoints="{anchorPoints}"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="editing"/>
+		<s:State name="normal"/>
+	</s:states>
+
+	<s:Rect left="0" right="0" top="0" bottom="0" radiusX="3" radiusY="3">
+		<s:fill>
+			<s:LinearGradient rotation="-90">
+				<s:GradientEntry color="0xE8E8E8"/>
+				<s:GradientEntry color="0xF5F5F5"/>
+			</s:LinearGradient>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="0xB3B3B3"/>
+		</s:stroke>
+	</s:Rect>
+
+	<s:Group left="10" right="10" top="10" bottom="10">
+
+		<s:Image includeIn="normal" width="72" height="72"
+				 skinClass="fr.kapit.lab.demo.forms.skin.VCardImageSkin" source="{_vCardImage}"/>
+		<!--<renderers:VcardImage includeIn="editing" width="92" top="0" bottom="0" />-->
+		<s:DropDownList id="faceDropDownList" includeIn="editing" top="0" bottom="0" width="92"
+						change="faceDropDownList_changeHandler(event)"
+						selectionColor="#4D9AD1"
+						itemRenderer="fr.kapit.lab.demo.ui.renderers.people.FaceRenderer"
+						selectedIndex="{_vCardData.imageNumber}"
+						skinClass="fr.kapit.lab.demo.forms.skin.ImageDropDownListSkin">
+			<s:layout>
+				<s:TileLayout requestedColumnCount="3" requestedRowCount="2"/>
+			</s:layout>
+			<s:dataProvider>
+				<s:ArrayList>
+					<fx:Object src="{EmbeddedAssets.FACE_0_60}"/>
+					<fx:Object src="{EmbeddedAssets.FACE_1_60}"/>
+					<fx:Object src="{EmbeddedAssets.FACE_2_60}"/>
+					<fx:Object src="{EmbeddedAssets.FACE_3_60}"/>
+					<fx:Object src="{EmbeddedAssets.FACE_4_60}"/>
+					<fx:Object src="{EmbeddedAssets.FACE_5_60}"/>
+				</s:ArrayList>
+			</s:dataProvider>
+		</s:DropDownList>
+
+		<ns:AdvancedTextInput id="nameTxt" includeIn="editing" right="0" width="144" height="26"
+							  change="nameTxt_changeHandler(event)" prompt="Name &amp; FirstName"
+							  text="{_vCardData.name}" textAlign="left"/>
+		<ns:AdvancedTextInput id="jobTxt" includeIn="editing" right="0" top="35" width="144"
+							  height="26" change="jobTxt_changeHandler(event)" prompt="Job"
+							  text="{_vCardData.job}" textAlign="left"/>
+
+		<s:Label includeIn="normal" left="87" top="22" width="100%" fontSize="18" fontWeight="bold"
+				 text="{_vCardData.name}" textAlign="left"/>
+		<s:Label includeIn="normal" left="87" top="41" width="100%" color="#4D4D4D" fontSize="12"
+				 text="{_vCardData.job}" textAlign="left"/>
+	</s:Group>
+
+
+
+</s:Group>

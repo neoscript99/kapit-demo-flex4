@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<diagrammer:Diagrammer xmlns:diagrammer="fr.kapit.diagrammer.*"
+					   xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   layout="mindMap"
+					   nodeRendererFunction="mindMapNodeRendererFunction"
+					   useMultiLink="false"
+					   creationComplete="diagrammerCreationCompleteHandler(event)"
+					   >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.diagrammer.actions.DeleteAction;
+		import fr.kapit.diagrammer.actions.RedoAction;
+		import fr.kapit.diagrammer.actions.UndoAction;
+		import fr.kapit.diagrammer.actions.data.UndoRedoActionData;
+		import fr.kapit.lab.demo.actions.MindMapDisplaceAction;
+		import fr.kapit.lab.demo.actions.MindMapShortCutAction;
+		import fr.kapit.lab.demo.commands.AddSubTopicCommand;
+		import fr.kapit.lab.demo.commands.RemoveSubTopicCommand;
+		import fr.kapit.lab.demo.commands.SwapLinkCommand;
+		import fr.kapit.lab.demo.data.MindMapLinkData;
+		import fr.kapit.lab.demo.data.MindMapNodeData;
+		import fr.kapit.lab.demo.event.MindMapEvent;
+		import fr.kapit.lab.demo.renderer.mindmap.MindMapNodeController;
+		import fr.kapit.lab.demo.renderer.mindmap.MindMapNodeRenderer;
+		import fr.kapit.lab.demo.ui.skins.MindMapRootNodeRendererSkin;
+		import fr.kapit.layouts.algorithms.mindmap.MindMapLayout;
+		import fr.kapit.layouts.constants.EdgeDrawType;
+		import fr.kapit.visualizer.actions.DisplaceAction;
+		import fr.kapit.visualizer.actions.KeyboardAction;
+		import fr.kapit.visualizer.base.ILink;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		import fr.kapit.visualizer.styles.LinkStyle;
+		import fr.kapit.visualizer.utils.HierarchyUtils;
+		
+		import mx.core.UIComponent;
+		import mx.events.FlexEvent;
+		import mx.utils.UIDUtil;
+
+		[Bindable]
+		protected var _selectedItems:Array = []
+
+		/* **********
+		* Handlers
+		************/
+		protected function diagrammerCreationCompleteHandler(event:FlexEvent):void
+		{
+			initMindMapLayout();
+			initMindMapActions();
+
+			// to be added when a contextual menu should be shown
+			//use a custom controller permetting to add the expand/collapse icon
+			//itemsFactory.addOrReplaceClassReference('spriteController',MindMapNodeController);
+
+		}
+
+		private function mindMapNodeRendererFunction(data:Object):DisplayObject
+		{
+			var renderer:MindMapNodeRenderer = new MindMapNodeRenderer();
+			renderer.data = data;
+			if (data.isRoot)
+			{
+				renderer.setStyle("skinClass", MindMapRootNodeRendererSkin);
+			}
+			return renderer;
+		}
+
+		protected function initMindMapLayout():void
+		{
+			// specifiying the edge drawing type
+			mindMapLayout.edgeDrawing = EdgeDrawType.CURVED_POLYLINE;
+		}
+
+		protected function initMindMapActions():void
+		{
+			//use a custom displace Action to check where to add the topic when it is moved
+			unregisterAction(DisplaceAction.ID);
+			registerAction(MindMapDisplaceAction,false);
+			// intializing the diagrammer within a simple node
+			createRootNode();
+			//use a custom keyboard action permetting the keyboard interaction
+			unregisterAction(KeyboardAction.ID);
+			registerAction(MindMapShortCutAction,true);
+
+			var undoRedoActionData:UndoRedoActionData = new UndoRedoActionData();
+			undoRedoActionData.consideredEvents = [
+				VisualizerEvent.ELEMENTS_PROPERTY_CHANGED,
+				VisualizerEvent.GRAPH_PANNED,
+				MindMapEvent.SUBTOPIC_ADDED,
+				MindMapEvent.LINK_SWAPPED,
+				MindMapEvent.SUBTOPIC_REMOVED];
+			updateAction(UndoAction.ID,undoRedoActionData);
+			updateAction(RedoAction.ID,undoRedoActionData);
+			unregisterAction(DeleteAction.ID);
+		}
+
+		/* ********
+		* Helper methods
+		*************/
+
+
+		// create the root node
+		protected function createRootNode():void
+		{
+			var mindMapNodeData:MindMapNodeData = new MindMapNodeData();
+			mindMapNodeData.uid = UIDUtil.createUID();
+			mindMapNodeData.label = "New Mindmap";
+			mindMapNodeData.isRoot = true;
+			var targetTopic:ISprite = addNodeElement(mindMapNodeData,null,null,null,mindMapNodeData.uid,false,false,false,true);
+			targetTopic.isSelected = true;
+			UIComponent(targetTopic).setFocus();
+		}
+
+		public function addSubTopic(sourceTopic:ISprite, isChild:Boolean, nodeData:MindMapNodeData=null, linkData:MindMapLinkData = null, noEvent:Boolean=false):Array
+		{
+			//Creating Node
+			var mindMapNodeData:MindMapNodeData = nodeData ? nodeData : new MindMapNodeData();
+			mindMapNodeData.uid = UIDUtil.createUID();
+			var isRoot:Boolean = false;
+			if (MindMapNodeData(sourceTopic.data).isRoot)
+			{
+				isRoot = true;
+			}
+			var parentNode:ISprite = isRoot || isChild ? sourceTopic : sourceTopic.hierarchyParent;
+			var targetTopic:ISprite = addNodeElement(mindMapNodeData,null,parentNode , new Point(parentNode.x,parentNode.y),mindMapNodeData.uid,false,false,false,true);
+			var link:ILink;
+			//Creating Link
+			if (sourceTopic)
+			{
+				var mindMapLinkData:MindMapLinkData = (linkData) ? linkData : new MindMapLinkData();
+				mindMapLinkData.source = sourceTopic.itemID;
+				mindMapLinkData.target = targetTopic.itemID;
+				mindMapLinkData.uid = sourceTopic.itemID+'->'+targetTopic.itemID;
+				link = addLinkElement(mindMapLinkData,isRoot || isChild ? sourceTopic : sourceTopic.hierarchyParent,targetTopic,null,-1,-1,mindMapLinkData.uid,createLinkStyle(),0,false,false,true);
+			}
+			layoutID = MindMapLayout.ID
+			if (!noEvent)
+			{
+				// add command for undo
+				var addCommand:AddSubTopicCommand = new AddSubTopicCommand();
+				addCommand.items = [targetTopic.data.uid];
+				addCommand.visualizer = this;
+				dispatchEvent(new MindMapEvent(MindMapEvent.SUBTOPIC_ADDED, [sourceTopic],null,[addCommand]));
+			}
+			return [targetTopic,link];
+		}
+
+		public function removeSubTopic(subTopic:ISprite, removeSubtopics:Boolean=true):void
+		{
+			if (!subTopic)
+			{
+				return;
+			}
+			var commandItems:Array = getSubTree(subTopic);
+			removeNodeElement(subTopic.itemID,removeSubtopics,true);
+			var removeCommand:RemoveSubTopicCommand = new RemoveSubTopicCommand();
+			removeCommand.items = commandItems;
+			removeCommand.subTopicToRemove = subTopic.data as MindMapNodeData;
+			removeCommand.visualizer = this;
+			dispatchVisualizerEvent(MindMapEvent.SUBTOPIC_REMOVED, commandItems,null,removeCommand, false);
+		}
+
+		public function swapLink(sourceNode:ISprite,targetNode:ISprite):ILink
+		{
+			var links:Dictionary = targetNode.inLinks;
+			/* if (sourceNode.hierarchyChildren.indexOf(targetNode) > -1 || sourceNode.hierarchyParent == targetNode)
+				return null; */
+			var subTreeChildren:Array = HierarchyUtils.getSubTree(targetNode,false);
+			if ( subTreeChildren.indexOf(sourceNode) > -1)
+				return null;
+			for each (var link:ILink in links)
+				removeLinkElement(link.itemID,false,true);
+		
+				
+
+			var mindMapLinkData:MindMapLinkData = new MindMapLinkData();
+			mindMapLinkData.source = sourceNode.itemID;
+			mindMapLinkData.target = targetNode.itemID;
+			if (checkLinkExistence(sourceNode,targetNode))
+				return null;
+			var newLink:ILink = addLinkElement(mindMapLinkData,sourceNode,targetNode,null,-1,-1,null,null,0,false,false,true);
+
+
+			// adding swap command 
+			var commandParams:Array = [targetNode.hierarchyParent.data,sourceNode.data, targetNode.data]
+			var swapCommand:SwapLinkCommand = new SwapLinkCommand();
+			swapCommand.visualizer = this;
+			swapCommand.items = commandParams;
+			dispatchVisualizerEvent(MindMapEvent.LINK_SWAPPED, commandParams,null,swapCommand, false);
+			targetNode.hierarchyParent = sourceNode;
+			return newLink;
+		}
+
+		public static function getSubTree(node:ISprite):Array
+		{
+			var depthQueue:Array = [node];
+			var depthQueueLength:uint = depthQueue.length;
+			var subTreeChildren:Array = [];
+			var subTreeChildrenLength:uint=0;
+			var childHierarchyChildren:Array;
+			var childHierarchyLength:uint;
+			var childNode:ISprite;
+			var links:Array;
+			var link:ILink;
+			while (depthQueueLength>subTreeChildrenLength)
+			{
+				childNode = depthQueue[subTreeChildrenLength];
+				links = [];
+				for each (link in childNode.inLinks)
+				{
+					links.push(link.data);
+				}
+				subTreeChildren[subTreeChildrenLength++]  = [childNode.data,links, childNode.hierarchyParent.data]
+				childHierarchyChildren = childNode.hierarchyChildren;
+				childHierarchyLength = childHierarchyChildren.length;
+				if (childHierarchyLength>0)
+				{
+					depthQueue = depthQueue.concat(childHierarchyChildren);
+					depthQueueLength+=childHierarchyLength;
+				}
+			}
+
+			return subTreeChildren;
+		}
+
+		// verify if there are already a link between two nodes
+		protected function checkLinkExistence( source:ISprite, target:ISprite):Boolean
+		{
+			var neighbours : Array = getNodeNeighbours(source);
+			return neighbours.indexOf(target) < 0 ? false : true
+
+		}
+
+		// getting node's neighbours 
+		protected function getNodeNeighbours(item:ISprite):Array
+		{
+			var result:Array = [];
+			var node:ISprite;
+			var nodes:Dictionary = item.inConnections;
+			for each (node in nodes)
+			{
+				result.push(node);
+			}
+			nodes = item.outConnections;
+			for each (node in nodes)
+			{
+				result.push(node);
+			}
+			return result;
+		}
+
+		private function createLinkStyle():LinkStyle
+		{
+			var linkStyle:LinkStyle = new LinkStyle();
+			linkStyle.arrowTargetType = LinkStyle.LINK_ARROW_ARROW_TYPE;
+			return linkStyle;
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</diagrammer:Diagrammer>

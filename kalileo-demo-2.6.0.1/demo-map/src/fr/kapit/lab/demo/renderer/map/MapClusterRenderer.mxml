@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<base:BaseClusterRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  xmlns:base="fr.kapit.lab.demo.renderer.base.*"
+						  implements="fr.kapit.visualizer.renderers.IMorphable"
+						  isFixed="true">
+	<fx:Script>
+		<![CDATA[
+			import fr.kapit.visualizer.actions.ZoomAction;
+			import fr.kapit.visualizer.constants.ClippingShapeConstants;
+			
+			
+			
+			private static var MIN_COUNTRY_SIZE:Number = 60;
+			private static var MAX_COUNTRY_SIZE:Number = 100;
+			private static var MIN_CITY_SIZE:Number = 30;
+			private static var MAX_CITY_SIZE:Number = 100;
+			
+			/* ***************
+			* IMorphable implementation
+			*****************/
+			
+			protected var _clippingShape:String = ClippingShapeConstants.COMPACT_CIRCLE;
+			public function get clippingShape():String
+			{
+				return _clippingShape;
+			}
+			public function set clippingShape(value:String):void
+			{
+				_clippingShape = value;
+			}
+			
+			protected var _isMorphDirty:Boolean = true;
+			protected var _ratio:Number;
+			public function set isMorphDirty(value:Boolean):void
+			{
+				_isMorphDirty = value;
+				_ratio = _item.visualizer.ratio;
+				invalidateDisplayList();
+			}
+			
+			/* ******
+			* Overriden methods
+			**************/
+			
+			protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				if(_isMorphDirty)
+				{
+					if(_supportLevelOfDeltails)
+						_item.visualizer.messageAction(ZoomAction.ID, 'Pause');
+					updateLevelOfDetail();
+					_isMorphDirty = false;
+				}
+				if(_supportLevelOfDeltails)
+					_item.visualizer.messageAction(ZoomAction.ID, 'Resume');
+				
+				updateRing();
+			}
+			protected function updateLevelOfDetail():void
+			{
+				_ratio = _mapVisualizer.ratio;
+				if(_group.subGroupDepth == 0)
+				{
+					if(_ratio<_mapVisualizer.countryZoomRatio)
+						setGroupExpandature(false);
+					else if(_ratio>=_mapVisualizer.countryZoomRatio)
+						setGroupExpandature(true);
+				}
+				else if(_group.subGroupDepth == 1 && _group.isVisibleInContainer)
+				{
+					if(_ratio<_mapVisualizer.townZoomRatio)
+						setGroupExpandature(false);
+					else if(_ratio>=_mapVisualizer.townZoomRatio)
+						setGroupExpandature(true);
+				}
+			}
+			protected function setGroupExpandature(isExpanded:Boolean):void
+			{
+				if(_group.isGroupExpanded != isExpanded)
+				{
+					_group.isGroupExpanded = isExpanded;
+					_includeSummary = !isExpanded;
+					_includePictogram = _group.subGroupDepth==1 && !isExpanded  && _groupMinSize > (MIN_CITY_SIZE+MAX_CITY_SIZE)*0.5 ;
+					ringHelper.backgroundAlpha = isExpanded || _groupMinSize<(MIN_CITY_SIZE+MAX_CITY_SIZE)*0.5 ? 0 : 1;
+					_mapVisualizer.forceGraphUpdate = true;
+					_mapVisualizer.forceLinkStyleUpdate = true;
+				}
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</base:BaseClusterRenderer>

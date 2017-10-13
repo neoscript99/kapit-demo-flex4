@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:buttons="fr.kapit.lab.demo.buttons.*"
+		 xmlns:components="fr.kapit.lab.demo.menubar.components.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 addedToStage="hgroup1_addedToStageHandler(event)"
+		 >
+
+	<fx:Library>
+		<fx:Definition name="SeparatorLine">
+			<s:Group width="1" height="30">
+				<s:Rect width="0" height="30">
+					<s:stroke>
+						<s:SolidColorStroke color="#cccccc"/>
+					</s:stroke>
+				</s:Rect>
+
+
+			</s:Group>
+		</fx:Definition>
+	</fx:Library>
+	<!--	<fx:Style>
+			@namespace s "library://ns.adobe.com/flex/spark";
+			@namespace mx "library://ns.adobe.com/flex/mx";
+			@namespace buttons "fr.kapit.lab.demo.buttons.*";
+			@namespace components "fr.kapit.lab.demo.menubar.components.*";
+			.myPop {
+				backgroundAlpha: 0.7;
+				backgroundColor: black;
+				borderStyle: none;
+				color: white;
+			}
+		</fx:Style>-->
+
+	<fx:Metadata>
+		[Event(name="graphImported", type="flash.events.Event")]
+	</fx:Metadata>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.diagrammer.Diagrammer;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.model.DiagrammerModel;
+		import fr.kapit.lab.demo.popup.ErrorPopup;
+		import fr.kapit.lab.demo.ui.components.layouts.LayoutPanel;
+		import fr.kapit.layouts.layouts_internal;
+		import fr.kapit.visualizer.actions.DisplaceAction;
+		import fr.kapit.visualizer.actions.ZoomAction;
+		import fr.kapit.visualizer.actions.data.DisplaceActionData;
+		import fr.kapit.visualizer.actions.data.ZoomActionData;
+		import fr.kapit.visualizer.base.IGroup;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.constants.AlignConstants;
+		import fr.kapit.visualizer.constants.PrintPolicyConstants;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		import fr.kapit.visualizer.renderers.IGroupRenderer;
+		import fr.kapit.visualizer.renderers.ITableRenderer;
+		import fr.kapit.visualizer.utils.data.BorderParam;
+		
+		import mx.core.IFlexDisplayObject;
+		import mx.graphics.codec.PNGEncoder;
+		import mx.managers.PopUpManager;
+		
+		import spark.events.IndexChangeEvent;
+		[Bindable]
+		public var appModel:ApplicationModel
+		
+		[Bindable] 
+		public var layoutPanel:LayoutPanel;
+
+		[Bindable]
+		public var model:DiagrammerModel;
+
+		[Bindable]
+		private var _hasNodesSelected:Boolean;
+
+		[Bindable]
+		private var _hasGroupsSelected:Boolean;
+
+		[Bindable]
+		private var _hasMultiNodesSelected:Boolean;
+
+		/* [Bindable]
+		private var _isAllRemoved:Boolean */
+
+		private var _newCreatedNode:ISprite;
+
+		private var _exportedXml:XML
+
+		private var _importedFile:FileReference;
+
+		private var _cursorAction:Class;
+
+		private var _zoomStateActivated:Boolean;
+
+		private var gridStateActivated:Boolean=false;
+
+
+		/**
+		 * @private
+		 * Instance of popup to confirm deletion of all nodes
+		 */
+		private var _confirmRemovePopup:IFlexDisplayObject;
+
+		/**
+		 * @private
+		 * Instance of popup to to display the export/import messages.
+		 */
+		private var _errorPopup:IFlexDisplayObject;
+
+
+		private static const EXPORT_AS_XML:String = "Download as XML file";
+
+		private static const EXPORT_AS_PNG:String = "Download as PNG file";
+
+		private static const IMPORT_AS_XML:String = "Import Kalileo XML file";
+
+		[Bindable]
+		private var dataProvider:ArrayCollection = new ArrayCollection([
+			{label: EXPORT_AS_XML}, 
+			{label: EXPORT_AS_PNG}, 
+			{label: IMPORT_AS_XML}
+		]);
+
+
+		protected function hgroup1_addedToStageHandler(event:Event):void
+		{
+			init();
+			toolBar.selectedIndex = 0;
+			setSelectionState();
+		}
+
+		protected function init():void
+		{
+			_cursorAction = null;
+			_zoomStateActivated = false;
+			model.visualizer.updateAction(ZoomAction.ID, new ZoomActionData);
+			cursorManager.removeAllCursors();
+
+			model.unregisterAllListeners();
+			model.diagrammer.mouseChildren = true;
+			model.enableLinkMode = false;
+			model.enableMultiSelection = false;
+			model.enablePan = false;
+			model.enableSelectAndResizeNodes(false);
+			model.unselectAll();
+		}
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			_hasGroupsSelected = model.isGroupSelection(true);
+			//_hasNodesSelected = model.isNodeSelection(true);
+			_hasNodesSelected = model.diagrammer.selection.concat().length > 0;
+			_hasMultiNodesSelected=model.diagrammer.selection.concat().length>1;
+		}
+
+		protected function setSelectionState():void
+		{
+			/* selection.icon = EmbeddedAssets.IMG_MENUBAR_SELECTION;
+			cursor.icon = EmbeddedAssets.IMG_MENUBAR_CURSOR_ACTIVE; */
+			toolBar.dataProvider = null;
+			toolBar.dataProvider = tool;
+			model.enableSelectAndResizeNodes(true);
+			model.enablePan = true;
+		}
+
+		protected function setMultiSelectionState():void
+		{
+			/* selection.icon = EmbeddedAssets.IMG_MENUBAR_SELECTION_ACTIVE;
+			cursor.icon = EmbeddedAssets.IMG_MENUBAR_CURSOR; */
+			toolBar.dataProvider = null;
+			toolBar.dataProvider = tool;
+			model.enableSelectAndResizeNodes(true);
+			model.enableMultiSelection = true;
+		}
+
+		protected function setPanState():void
+		{
+			model.enablePan = true;
+		}
+
+		protected function setZoomState(isOutState:Boolean):void
+		{
+			_cursorAction = isOutState ? EmbeddedAssets.IMG_ZOOM_OUT : EmbeddedAssets.IMG_ZOOM_IN;
+			_zoomStateActivated = true;
+			model.enableZoom(true, isOutState);
+		}
+
+		protected function setCreateLinkState():void
+		{
+			model.enableLinkMode = true;
+			model.defaultLinkStyle = String(toolBar.selectedItem.selectedTool.data);
+			model.registerListener(KeyboardEvent.KEY_UP, linkmodeKeyUpHandler);
+			model.diagrammer.setFocus();
+		}
+
+		protected function linkmodeKeyUpHandler(event:KeyboardEvent):void
+		{
+			model.isLogEnabled = false;
+			if (event.keyCode == Keyboard.ESCAPE)
+			{
+				init();
+				callLater(setCreateLinkState);
+			}
+			model.isLogEnabled = true;
+		}
+
+		protected function setCreateShapeState():void
+		{
+			model.registerListener(MouseEvent.CLICK, addShapeHandler);
+			_cursorAction = toolBar.selectedItem.selectedTool.icon;
+		}
+
+		protected function addShapeHandler(event:MouseEvent):void
+		{
+			var container:IGroup=null;
+			var addNode:Boolean=false;
+			if (event.target is IGroup)
+			{
+				container = event.target as IGroup;
+				addNode=true;
+			}
+			else if (event.target is IGroupRenderer || event.target is ITableRenderer)
+			{
+				container = event.target.item as IGroup;
+				addNode=true;
+			}
+			else if (event.target is Diagrammer)
+			{
+				addNode=true;
+			}
+			if (addNode)
+			{
+				var shape:String = String(toolBar.selectedItem.selectedTool.data);
+				var size:int = 50;
+				_newCreatedNode = model.addNode("label", shape, new Point(model.diagrammer.mouseX-(container?container.x:0), model.diagrammer.mouseY-(container?container.y:0)), size,container);
+				model.unselectAll();
+				//_newCreatedNode.isSelected = true;
+				model.diagrammer.dispatchVisualizerEvent(VisualizerEvent.ELEMENTS_SELECTION_CHANGED, model.diagrammer.selection);
+			}
+		}
+
+		protected function btundo_clickHandler(event:MouseEvent):void
+		{
+			undoRedo(true);
+		}
+
+
+		protected function btredo_clickHandler(event:MouseEvent):void
+		{
+			undoRedo(false);
+		}
+
+		protected function undoRedo(isUndo:Boolean):void
+		{
+			try
+			{
+				isUndo ? model.undo() : model.redo();
+				model.history.checkUndoRedoTasks(null);
+				model.diagrammer.unselectAll();
+			}
+			catch (e:Error)
+			{
+			}
+		}
+
+		protected function toolBar_selectionChangedHandler(event:IndexChangeEvent):void
+		{
+			init();
+
+			switch (toolBar.selectedIndex)
+			{
+				case 0:
+				{
+					setSelectionState();
+					break;
+				}
+				case 1:
+				{
+					setMultiSelectionState();
+					break;
+				}
+			}
+		}
+
+		protected function btgroup_clickHandler(event:MouseEvent):void
+		{
+			model.createGroup();
+		}
+
+		protected function btungroup_clickHandler(event:MouseEvent):void
+		{
+			model.destroyGroups();
+		}
+
+		protected function addtable_clickHandler(event:MouseEvent):void
+		{
+			model.addTable();
+		}
+
+		public function get cursorAction():Class
+		{
+			return _cursorAction;
+		}
+
+		public function get zoomStateActivated():Boolean
+		{
+			return _zoomStateActivated;
+		}
+
+		protected function exportGraph_clickHandler(event:MouseEvent):void
+		{
+			exportXML();
+		}
+
+		protected function importGraph_clickHandler(event:MouseEvent):void
+		{
+			_importedFile = new FileReference;
+			_importedFile.addEventListener(Event.SELECT, importedFile_selectHandler);
+			_importedFile.browse([new FileFilter("XML File", "*.xml")]);
+		}
+
+		protected function importedFile_selectHandler(event:Event):void
+		{
+			_importedFile.addEventListener(Event.COMPLETE, importedFile_completeHandler);
+			_importedFile.addEventListener(IOErrorEvent.IO_ERROR, importedFile_errorHandler);
+			_importedFile.addEventListener(SecurityErrorEvent.SECURITY_ERROR, importedFile_errorHandler);
+			_importedFile.load();
+		}
+
+		protected function importedFile_completeHandler(event:Event):void
+		{
+			const type:String = ".xml";
+			if (_importedFile.name.toLowerCase().indexOf(type) != (_importedFile.name.length - type.length))
+			{
+				return importedFile_errorHandler(null);
+			}
+
+			try
+			{
+				var xml:XML = new XML(_importedFile.data.readUTFBytes(_importedFile.data.bytesAvailable));
+				if (xml.name() == "diagram")
+				{
+					model.diagrammer.fromXML(xml);
+					dispatchEvent(new Event("graphImported"));
+				}
+				else
+				{
+					importedFile_errorHandler(null);
+				}
+			}
+			catch (e:*)
+			{
+				importedFile_errorHandler(null);
+			}
+			switch (model.diagrammer.layoutID)
+			{
+				case "hierarchicalTree":
+					layoutPanel.layoutSelector.selectedIndex=0;
+					break;
+				
+				case "hierarchicalCyclic":
+					layoutPanel.layoutSelector.selectedIndex=1;
+					break;
+					
+				case "orthogonal":
+					layoutPanel.layoutSelector.selectedIndex=2;
+					break;
+					
+				case "singleCircular":
+					layoutPanel.layoutSelector.selectedIndex=3;
+					break;
+				
+				case "balloon":
+					layoutPanel.layoutSelector.selectedIndex=4;
+					break;
+				
+				case "radial":
+					layoutPanel.layoutSelector.selectedIndex=5;
+					break;
+				
+				case "forceDirected":
+					layoutPanel.layoutSelector.selectedIndex=6;
+					break;
+			}
+            layoutPanel.enableControls=true;
+		}
+
+		protected function importedFile_errorHandler(event:ErrorEvent):void
+		{
+			_errorPopup = PopUpManager.createPopUp(this.parent, ErrorPopup, true);
+			PopUpManager.centerPopUp(_errorPopup);
+			ErrorPopup(_errorPopup).title = "Error";
+			ErrorPopup(_errorPopup).showBtClose = false;
+			ErrorPopup(_errorPopup).errorLabel = event ? "There was an error while the import of XML file." : "You must choose a previous exported XML file.";
+			ErrorPopup(_errorPopup).addEventListener(Event.CLOSE, closeErrorPopupHandler);
+		}
+
+		protected function closeErrorPopupHandler(event:Event):void
+		{
+			PopUpManager.removePopUp(_errorPopup);
+		}
+
+		private function createXML():void
+		{
+			_exportedXml = new XML;
+			if ((model.diagrammer.toXML()).children().length() !=0)
+			{
+				_exportedXml = model.diagrammer.toXML();
+			}
+		}
+
+		private function exportXML():void
+		{
+			createXML();
+			var bytes:ByteArray = new ByteArray;
+			bytes.writeUTFBytes(_exportedXml);
+			var file:FileReference = new FileReference;
+			file.save(bytes, "diagrammer_graph.xml");
+		}
+
+		protected function clearButton_clickHandler(event:MouseEvent):void
+		{
+			model.removeAll();
+			model.isEmpty = true;
+			model.diagrammer.dispatchVisualizerEvent(VisualizerEvent.DATA_LOADED, [],new Object());//reset overview
+		}
+
+
+		protected function vertical_centered_clickHandler(event:MouseEvent):void
+		{
+			model.diagrammer.alignSelection(AlignConstants.VERTICAL_ALIGNEMENT_CENTERED);
+		}
+
+		protected function vertical_top_clickHandler(event:MouseEvent):void
+		{
+			model.diagrammer.alignSelection(AlignConstants.VERTICAL_ALIGNEMENT_TOP);
+		}
+
+
+		protected function horizontal_centered_clickHandler(event:MouseEvent):void
+		{
+			model.diagrammer.alignSelection(AlignConstants.HORIZONTAL_ALIGNEMENT_CENTERED);
+		}
+
+		protected function horizontal_left_clickHandler(event:MouseEvent):void
+		{
+			model.diagrammer.alignSelection(AlignConstants.HORIZONTAL_ALIGNEMENT_LEFT);
+		}
+
+		protected function horizontal_right_clickHandler(event:MouseEvent):void
+		{
+			model.diagrammer.alignSelection(AlignConstants.HORIZONTAL_ALIGNEMENT_RIGHT);
+		}
+
+		protected function vertical_bottom_clickHandler(event:MouseEvent):void
+		{
+			model.diagrammer.alignSelection(AlignConstants.VERTICAL_ALIGNEMENT_BOTTOM);
+
+		}
+
+		protected function exportPNG():void
+		{
+			var bitmapData:BitmapData = model.diagrammer.getBitmapData(-1,-1,true,true,3,3,PrintPolicyConstants.printAllLayers);
+			var ba:ByteArray = new PNGEncoder().encode(bitmapData);
+			new FileReference().save(ba, "snapshot.png");
+		}
+
+		protected function gridActivation_clickHandler(event:MouseEvent):void
+		{
+			gridStateActivated=!gridStateActivated
+			model.diagrammer.enableGrid = gridStateActivated;
+			var myData:DisplaceActionData= new DisplaceActionData();
+			myData.snapParam.useSnapGrid= gridStateActivated;
+			var borderParam:BorderParam = new BorderParam();
+			borderParam.enableBorderDrag=true;
+			borderParam.enableContinuousBorderDrag =  true;
+			myData.borderParam=borderParam;
+			model.diagrammer.updateAction(DisplaceAction.ID, myData);
+
+		}
+
+		protected function importExportPop_changeHandler(event:IndexChangeEvent):void
+		{
+			switch (importExportPop.selectedItem.label)
+			{
+				case EXPORT_AS_XML:
+				{
+					exportXML();
+					break;
+				}
+				case EXPORT_AS_PNG:
+				{
+					exportPNG();
+					break;
+				}
+				case IMPORT_AS_XML:
+				{
+					_importedFile = new FileReference;
+					_importedFile.addEventListener(Event.SELECT, importedFile_selectHandler);
+					_importedFile.browse([new FileFilter("XML File", "*.xml")]);
+					break;
+				}
+			}
+			importExportPop.selectedIndex = -1;
+		}
+	]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<s:ArrayCollection id="tool">
+			<fx:Object id="cursor"
+					   icon="{EmbeddedAssets.IMG_MENUBAR_CURSOR}"
+					   toolTip="Selection"
+					   />
+			<fx:Object id="selection"
+					   icon="{EmbeddedAssets.IMG_MENUBAR_SELECTION}"
+					   toolTip="Multiselection"
+					   />
+		</s:ArrayCollection>
+	</fx:Declarations>
+
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0xB3B3B3" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xF2F2F2" />
+		</s:fill>
+	</s:Rect>
+
+	<s:HGroup width="100%" left="10" top="5" verticalAlign="middle" gap="5">
+		<s:HGroup height="100%" left="10" verticalAlign="middle" gap="10">
+			<s:ButtonBar id="toolBar"
+						 dataProvider="{tool}" labelField=""
+						 requireSelection="true"
+						 change="toolBar_selectionChangedHandler(event)"
+						 skinClass="fr.kapit.lab.demo.common.skins.buttonbars.CustomButtonBarSkin" >
+				<s:layout>
+					<s:HorizontalLayout gap="-1" columnWidth="30" variableColumnWidth="false"/>
+				</s:layout>
+			</s:ButtonBar>
+
+			<fx:SeparatorLine />
+
+			<s:HGroup height="28" verticalAlign="middle" gap="3">
+				<buttons:IconButton width="30" height="100%"
+									enabled="{_hasNodesSelected}" toolTip="Group (ctrl+g)"
+									iconActive="{EmbeddedAssets.IMG_MENUBAR_GROUP}"
+									iconInactive="{EmbeddedAssets.IMG_MENUBAR_GROUP_DISABLED}"
+									click="btgroup_clickHandler(event)"
+									/>
+				<buttons:IconButton width="30" height="100%"
+									enabled="{_hasGroupsSelected}"
+									toolTip="Ungroup (ctrl+shift+g)"
+									iconActive="{EmbeddedAssets.IMG_MENUBAR_UNGROUP}"
+									iconInactive="{EmbeddedAssets.IMG_MENUBAR_UNGROUP_DISABLED}"
+									click="btungroup_clickHandler(event)"
+									/>
+			</s:HGroup>
+
+			<fx:SeparatorLine />
+
+			<s:HGroup height="28" verticalAlign="middle" gap="3">
+				<buttons:Button id="vertical_centered"
+								width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_ALIGN_VM}"
+								enabled="{_hasMultiNodesSelected}"
+								toolTip="Vertical Centered"
+								click="vertical_centered_clickHandler(event)"
+								/>
+				<buttons:Button id="vertical_top"
+								width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_ALIGN_VT}"
+								enabled="{_hasMultiNodesSelected}" toolTip="Vertical Top"
+								click="vertical_top_clickHandler(event)"
+								/>
+				<buttons:Button id="vertical_bottom"
+								width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_ALIGN_VB}"
+								enabled="{_hasMultiNodesSelected}"
+								toolTip="Vertical Bottom"
+								click="vertical_bottom_clickHandler(event)"
+								/>
+				<buttons:Button id="horizontal_centered"
+								width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_ALIGN_HC}"
+								enabled="{_hasMultiNodesSelected}"
+								toolTip="Horizontal Centered"
+								click="horizontal_centered_clickHandler(event)"
+								/>
+				<buttons:Button id="horizontal_left"
+								width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_ALIGN_HL}"
+								enabled="{_hasMultiNodesSelected}"
+								toolTip="Horizontal Left"
+								click="horizontal_left_clickHandler(event)"
+								/>
+				<buttons:Button id="horizontal_right"
+								width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_ALIGN_HR}"
+								enabled="{_hasMultiNodesSelected}"
+								toolTip="Horizontal Right"
+								click="horizontal_right_clickHandler(event)"
+								/>
+			</s:HGroup>
+
+			<!--<fx:SeparatorLine />
+			<s:HGroup height="30" verticalAlign="middle" gap="3">
+				<buttons:IconButton id="gridActivation"
+									width="30" height="100%"
+									toolTip="Grid activation"
+									iconActive="{EmbeddedAssets.IMG_MENUBAR_GRID}"
+									click="gridActivation_clickHandler(event)"
+									/>
+			</s:HGroup>-->
+			<fx:SeparatorLine />
+			<s:HGroup height="28" verticalAlign="middle" gap="3">
+				<buttons:Button width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_UNDO}"
+								enabled="{model.history.canUndo}" toolTip="Undo (ctrl+z)"
+								click="btundo_clickHandler(event)"
+								/>
+				<buttons:Button width="30" height="100%"
+								icon="{EmbeddedAssets.IMG_MENUBAR_REDO}"
+								enabled="{model.history.canRedo}" toolTip="Redo (ctrl+y)"
+								click="btredo_clickHandler(event)"
+								/>
+			</s:HGroup>
+
+
+		</s:HGroup>
+		<s:HGroup width="100%"
+				  paddingRight="18" horizontalAlign="right" verticalAlign="middle"
+				  >
+			<s:DropDownList id="importExportPop"
+							width="125" height="28"
+							textAlign="center"
+							dataProvider="{dataProvider}" labelField="label"
+							prompt="Import/Export"
+							change="importExportPop_changeHandler(event)"
+							horizontalScrollPolicy="off"
+							/>
+		</s:HGroup>
+	</s:HGroup>
+
+</s:Group>

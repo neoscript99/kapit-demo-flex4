@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   skinClass="fr.kapit.lab.demo.elasticsearch.skins.InfoWindowSkin"
+			   title="Book's Details"
+			   mouseDownOutside="closeButton_clickHandler(event)"
+			   >
+	
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.elasticsearch.model.AmazonBook;
+		
+		import mx.managers.PopUpManager;
+		
+		private var _book:AmazonBook;
+		
+		[Bindable] private var _bookImageSource:String;
+		[Bindable] private var _bookPrice:String;
+		[Bindable] private var _description:String;
+
+		public function get book():AmazonBook
+		{
+			return _book;
+		}
+		/**
+		 * @private
+		 */
+		public function set book(value:AmazonBook):void
+		{
+			if (_book == value)
+				return;
+
+			if (!value)
+			{
+				PopUpManager.removePopUp(this);
+				systemManager.getSandboxRoot().removeEventListener(KeyboardEvent.KEY_DOWN, systemManager_keyDownHandler);
+			}
+			
+			_book = value;
+			if (_book)
+			{
+				PopUpManager.addPopUp(this, owner as DisplayObject, true);
+				PopUpManager.centerPopUp(this);
+				systemManager.getSandboxRoot().addEventListener(KeyboardEvent.KEY_DOWN, systemManager_keyDownHandler);
+				
+				_bookImageSource = _book.image;
+				titleLabel.text = _book.title;
+				authorLabel.text = "by " + _book.author;
+				_bookPrice = _book.price + " $";
+				_description = _book.description;
+			}
+			else
+				_bookImageSource = _bookPrice = _description = titleLabel.text = authorLabel.text = "";
+		}
+		
+		protected function systemManager_keyDownHandler(event:KeyboardEvent):void
+		{
+			if (event.keyCode == Keyboard.ESCAPE)
+				closeButton_clickHandler(null);
+		}
+	]]>
+	</fx:Script>
+	
+	
+	<s:HGroup gap="20" left="24" top="24">
+		<s:Image id="bookImage" 
+				 source="{_bookImageSource}" 
+				 width="96" height="123"
+				 />
+		<s:VGroup width="100%" height="100%">
+			<s:Label id="titleLabel" fontFamily="Calibri" fontWeight="bold" fontSize="16" maxDisplayedLines="2" color="0x333333" maxWidth="224" />
+			<s:Label id="authorLabel" fontFamily="Calibri" fontSize="12" color="0x999999" maxDisplayedLines="1" maxWidth="224" />
+			<s:RichText fontFamily="Calibri" fontSize="13" textAlign="justify" width="224" paddingTop="15" maxDisplayedLines="6" lineBreak="toFit">
+				<s:content>
+					<s:p><s:span color="0x1A1A1A" fontWeight="bold">Review:  </s:span><s:span color="0x333333" text="{_description}" /></s:p>
+				</s:content>
+			 </s:RichText>
+		</s:VGroup>
+	</s:HGroup>
+	
+	<s:RichText fontFamily="Calibri" fontSize="13" width="96" textAlign="center" left="24" bottom="26">
+		<s:content>
+			<s:p><s:span color="0x1A1A1A" fontWeight="bold">Price:</s:span> <s:span color="0x333333" text="{_bookPrice}" /></s:p>
+		</s:content>
+	</s:RichText>
+	
+</s:TitleWindow>

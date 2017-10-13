@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group
+		xmlns:fx="http://ns.adobe.com/mxml/2009"
+		xmlns:s="library://ns.adobe.com/flex/spark"
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		xmlns:scene="fr.kapit.lab.demo.ui.properties.scene.*"
+	 	width="100%"
+		xmlns:node="fr.kapit.lab.demo.ui.properties.node.*"
+		xmlns:link="fr.kapit.lab.demo.ui.properties.link.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.diagrammer.Diagrammer;
+		import fr.kapit.visualizer.base.ILink;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		
+		
+		
+		protected var _diagrammer:Diagrammer;
+		[Bindable]
+		protected var selectedItem:Object;
+		/* ********
+		* getters & setters
+		**********/
+
+		/**
+		 * @private
+		 * Reference to the visualizer instance.
+		 */
+		[Bindable]
+		public function get diagrammer():Diagrammer
+		{
+			return _diagrammer;
+		}
+
+		/**
+		 * @private
+		 * Reference to the visualizer instance.
+		 */
+		public function set diagrammer(value:Diagrammer):void
+		{
+			
+			if(_diagrammer)
+				_diagrammer.removeEventListener(VisualizerEvent.ELEMENTS_SELECTION_CHANGED, handleSelectionChange);
+			_diagrammer = value;
+			_diagrammer.addEventListener(VisualizerEvent.ELEMENTS_SELECTION_CHANGED, handleSelectionChange);
+		}
+		private function handleSelectionChange(event:VisualizerEvent):void
+		{
+			if (!event.items)
+				return;
+			if(event.items && event.items.length!=1)
+			{
+				selectedItem = null;
+				return;
+			}
+			selectedItem = event.items[0];
+			synchronize();
+		}
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			if (null == _diagrammer)
+				return;
+			
+			if (selectedItem is ISprite)
+			{
+				/* currentState = "nodeProperties";
+				nodeProperties.synchronize();
+				return; */
+			}
+			else if (selectedItem is ILink)
+			{
+				currentState = "edgeProperties";
+				edgeProperties.updateStyle();
+				return;
+			}
+			else 
+			{
+				currentState = "sceneProperties";
+				if (sceneProperties)
+					sceneProperties.synchronize();
+				return;
+			}
+			currentState = "empty";
+		}
+
+
+
+	]]>
+	</fx:Script>
+
+	<s:states>
+		<s:State name="empty" />
+		<s:State name="sceneProperties" />
+		<s:State name="nodeProperties" />
+		<s:State name="edgeProperties" />
+	</s:states>
+
+	<scene:ScenePropertiesPanel id="sceneProperties" includeIn="sceneProperties" diagrammer="{diagrammer}" />
+<!--	<node:NodePropertiesPanel id="nodeProperties" includeIn="nodeProperties"  />-->
+	<link:EdgePropertiesPanel id="edgeProperties" includeIn="edgeProperties" diagrammer="{diagrammer}" />
+
+</s:Group>

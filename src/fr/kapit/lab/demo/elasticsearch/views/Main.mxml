@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<common:TemplateDemoContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							  xmlns:s="library://ns.adobe.com/flex/spark" 
+							  xmlns:mx="library://ns.adobe.com/flex/mx"
+							  xmlns:common="fr.kapit.lab.demo.common.components.*"
+							  xmlns:components="fr.kapit.lab.demo.elasticsearch.components.*"
+							  xmlns:views="fr.kapit.lab.demo.elasticsearch.views.*"
+							  xmlns:model="fr.kapit.lab.demo.elasticsearch.model.*"
+							  xmlns:elasticsearch="fr.kapit.elasticsearch.*"
+							  title="Elastic Search Demo"
+							  openOptions="true" currentState="{applicationModel.viewState}"
+							  addedToStage="this_addedToStageHandler(event)"
+							  removedFromStage="this_removedFromStageHandler(event)"
+							  >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.elasticsearch.event.ElasticSearchEvent;
+		import fr.kapit.lab.demo.elasticsearch.model.AmazonBook;
+		import fr.kapit.lab.demo.elasticsearch.renderers.BookItemRenderer;
+		import fr.kapit.lab.demo.elasticsearch.renderers.ElasticItemRenderer;
+		
+		import mx.collections.ArrayList;
+		import mx.events.FlexEvent;
+		
+		import spark.events.IndexChangeEvent;
+		
+		[Bindable] public var selectedBook:AmazonBook;
+		
+		protected function this_addedToStageHandler(event:Event):void
+		{
+			applicationModel.searchTag = searchInput.text;
+			loadingWindow.open = true;
+		}
+		
+		protected function this_removedFromStageHandler(event:Event):void
+		{
+			applicationModel.cancel();
+			if (loadingWindow)
+				loadingWindow.open = false;
+		}
+		
+		protected function elasticSearch_changeHandler(event:ElasticSearchEvent):void
+		{
+			booksList.dataProvider = new ArrayList(elasticSearch.filterResult as Array);
+		}
+		
+		protected function booksList_clickHandler(event:MouseEvent):void
+		{
+			if (event.target is BookItemRenderer)
+				selectedBook = (event.target as BookItemRenderer).book;
+		}
+		
+		protected function booksList_keyDownHandler(event:KeyboardEvent):void
+		{
+			if (selectedBook)
+				return event.preventDefault();
+			
+			if (event.keyCode == Keyboard.ENTER || event.keyCode == Keyboard.SPACE)
+				selectedBook = booksList.selectedItem as AmazonBook;
+		}
+		
+		protected function colorPolicyDropDL_changeHandler(event:IndexChangeEvent):void
+		{
+			elasticSearch.colorPolicy = String(colorPolicyDropDL.selectedItem.value);
+		}
+		
+		protected function columnsCheckBox_changeHandler(event:Event):void
+		{
+			var props:Array = [];
+			var labels:Array = [];
+			if (languageCheckBox.selected)
+			{
+				props.push("language");
+				labels.push("Language");
+			}
+			if (editorCheckBox.selected)
+			{
+				props.push("publisher");
+				labels.push("Editor");
+			}
+			if (publishingDateCheckBox.selected)
+			{
+				props.push("publishingDate");
+				labels.push("Publishing Date");
+			}
+			if (priceCheckBox.selected)
+			{
+				props.push("priceRange");
+				labels.push("Price");
+			}
+			elasticSearch.filterProperties = props;
+			elasticSearch.filterLabels = labels;
+			
+			booksList.dataProvider = props.length ? applicationModel.books : null;
+		}
+		
+		protected function booksList_creationCompleteHandler(event:FlexEvent):void
+		{
+			booksList.removeEventListener(FlexEvent.CREATION_COMPLETE, booksList_creationCompleteHandler);
+			booksList.addEventListener(KeyboardEvent.KEY_DOWN, booksList_keyDownHandler, false, 100);
+		}		
+	]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<model:ApplicationModel id="applicationModel" />
+		<s:ArrayList id="colorPolicyCollection">
+			<fx:Object label="Monochromatic" value="{ElasticSearch.COLOR_POLICY_MONOCHROMATIC}" />
+			<fx:Object label="Bichromatic" value="{ElasticSearch.COLOR_POLICY_BICHROMATIC}" />
+			<fx:Object label="Spectrum" value="{ElasticSearch.COLOR_POLICY_SPECTRUM}" />
+		</s:ArrayList>
+		<common:ProgressPopUp id="loadingWindow"
+							  width="320" height="120"
+							  title="Loading data"
+							  percentProgressValue="{applicationModel.progress}"
+							  parentPopUp="{this}"
+							  open.loadedGroup="false"
+							  />
+		<components:InfoWindow id="infoWindow"
+							   width="386" height="250"
+							   owner="{this}"
+							   book="{selectedBook}"
+							   close="selectedBook = null"
+							   />
+	</fx:Declarations>
+	
+	<common:states>
+		<s:State name="normal" />
+		<s:State name="loaded" stateGroups="loadedGroup" />
+		<s:State name="empty" stateGroups="loadedGroup" />
+	</common:states>
+	
+	<common:optionsContent>
+<!--
+		UNSELECTED COLUMNS :
+-->
+		<common:OptionsPanel title="Unselected Columns" width="100%">
+			<!-- Row Height -->
+			<common:OptionElement title="Row Height (Min &amp; Max):">
+				<common:HRangeSlider id="rowHeightSlider"
+									 minimum="16" maximum="60" value="24" secondValue="42" stepSize="1"
+									 width="190" tickNumber="16"
+									 />
+			</common:OptionElement>
+			<!-- Dynamic Coloration -->
+			<s:HGroup gap="5">
+				<common:OptionElement title="Dynamic Coloration:" paddingRight="0">
+					<s:DropDownList id="colorPolicyDropDL" width="120"
+									buttonMode="true" requireSelection="true"
+									dataProvider="{colorPolicyCollection}" selectedIndex="1"
+									change="colorPolicyDropDL_changeHandler(event)"
+									/>
+				</common:OptionElement>
+				<s:VGroup gap="4" visible="{colorPolicyDropDL.selectedIndex &lt; 2}">
+					<s:Label text="First:" fontFamily="Calibri" />
+					<common:ColorPicker id="firstColorCP"
+										buttonMode="true"
+										selectedColor="0xE8E8E8"
+										/>
+				</s:VGroup>
+				<s:VGroup gap="4" visible="{colorPolicyDropDL.selectedIndex == 1}">
+					<s:Label text="Last:" fontFamily="Calibri" />
+					<common:ColorPicker id="lastColorCP"
+										buttonMode="true"
+										selectedColor="0xF7F7F7"
+										/>
+				</s:VGroup>
+			</s:HGroup>
+			<!-- Rollover Color -->
+			<common:OptionElement title="Rollover Color:">
+				<common:ColorPicker id="rolloverColorCP"
+									selectedColor="0xCEE3EF"
+									/>
+			</common:OptionElement>
+		</common:OptionsPanel>
+<!--
+		Selected Columns
+-->
+		<common:OptionsPanel title="Selected Columns" width="100%">
+			<!-- Selected row height -->
+			<common:OptionElement title="Selected row height:">
+				<common:NumericStepper id="selectedRowHeightNS"
+									   value="48" minimum="16" maximum="60" stepSize="1"
+									   />
+			</common:OptionElement>
+			<!-- Selected row color -->
+			<common:OptionElement title="Selected row color:">
+				<common:ColorPicker id="selectedRowColorCP"
+									selectedColor="0x4393C6"
+									/>
+			</common:OptionElement>
+			<!-- Colapsed rows height -->
+			<common:OptionElement title="Colapsed rows height:">
+				<common:NumericStepper id="colapsedRowsHeightNS"
+									   value="4" minimum="3" maximum="15" stepSize="1"
+									   />
+			</common:OptionElement>
+			<!-- Colapsed rows color -->
+			<common:OptionElement title="Colapsed rows color:">
+				<common:ColorPicker id="colapsedRowsColorCP"
+									selectedColor="0xCCCCCC"
+									/>
+			</common:OptionElement>
+		</common:OptionsPanel>
+<!--
+		Data
+-->
+		<common:OptionsPanel title="Data" width="100%">
+			<!-- Use Custom Item Renderer -->
+			<s:Group>
+				<s:CheckBox id="useCustomItemRenderer"
+							label="Use Custom Item Renderer" left="9"
+							selected="true" buttonMode="true"
+							/>
+			</s:Group>
+			<!-- Display tooltips -->
+			<s:Group>
+				<s:CheckBox id="displayTooltipsCheckBox"
+							label="Display Tooltips" left="9"
+							buttonMode="true" enabled="{!useCustomItemRenderer.selected}"
+							/>
+			</s:Group>
+			<!-- Columns displayed -->
+			<common:OptionElement title="Columns displayed:">
+				<common:layout>
+					<s:VerticalLayout gap="4" />
+				</common:layout>
+				<s:CheckBox id="languageCheckBox"
+							label="Language"
+							selected="true" buttonMode="true"
+							change="columnsCheckBox_changeHandler(event)"
+							/>
+				<s:CheckBox id="editorCheckBox"
+							label="Editor"
+							selected="true" buttonMode="true"
+							change="columnsCheckBox_changeHandler(event)"
+							/>
+				<s:CheckBox id="publishingDateCheckBox"
+							label="Publishing Date"
+							selected="true" buttonMode="true"
+							change="columnsCheckBox_changeHandler(event)"
+							/>
+				<s:CheckBox id="priceCheckBox"
+							label="Price"
+							selected="true" buttonMode="true"
+							change="columnsCheckBox_changeHandler(event)"
+							/>
+			</common:OptionElement>
+		</common:OptionsPanel>
+	</common:optionsContent>
+	
+	<s:Rect top="0" left="0" right="0" bottom="0">
+		<s:fill>
+			<s:SolidColor color="#E0E0E0"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:VGroup width="100%" height="100%" gap="0" horizontalAlign="contentJustify">
+		<!-- Search input -->
+		<s:SkinnableContainer skinClass="fr.kapit.lab.demo.elasticsearch.skins.SearchAreaSkin"
+							  enabled="false" enabled.loadedGroup="true">
+			<s:Label text="Amazon Book Search :" color="0x4D4D4D"
+					 fontFamily="Calibri" fontSize="18" paddingRight="9">
+				<s:filters>
+					<s:DropShadowFilter blurX="0" blurY="0" angle="90" color="0xFFFFFF" distance="1"/>
+				</s:filters>
+			</s:Label>
+			<s:TextInput id="searchInput" text="Actionscript 3"
+						 width="167" height="28"
+						 enter="applicationModel.searchTag = searchInput.text"
+						 />
+			<s:Button id="searchButton"
+					  width="28" height="28"
+					  icon="@Embed(source='/assets/icons/magnifier.png')"
+					  click="applicationModel.searchTag = searchInput.text"
+					  />
+		</s:SkinnableContainer>
+		<s:Group height="310" width="100%">
+			<s:Rect top="0" left="0" bottom="0" right="0">
+				<s:fill>
+					<s:SolidColor color="0xF2F2F2"/>
+				</s:fill>
+			</s:Rect>
+			<elasticsearch:ElasticSearch id="elasticSearch"
+										 left="0" right="-2" height="100%"
+										 dataProvider="{applicationModel.dataProvider}"
+										 elasticSearchItemRenderer="{useCustomItemRenderer.selected ? ElasticItemRenderer : null}"
+										 filterSkinClass="fr.kapit.lab.demo.elasticsearch.skins.ElasticFilterSkin"
+										 filterProperties="{['language','publisher','publishingDate','priceRange']}"
+										 filterLabels="['Language','Editor','Publishing Date','Price']"
+										 filterTitleHeight="42"
+										 filterTitleTextAlign="left" filterTitleVerticalTextAlign="middle"
+										 filterTitleFontColor="0x4F4F4F" filterTitleFontSize="16"
+										 filterTitleBorderColor="0x9E9E9E" filterTitleBorderThickness="1"
+										 filterTitleFillColors="[0xDBDBDB,0xC5C5C5]" filterTitleFillAlphas="[1,1]"
+										 filterListBorderColor="0x9E9E9E" filterListBorderThickeness="1"
+										 filterListFontColor="0x4D4D4D" filterListHorizontalOffset="10"
+										 filterListGap="-1"
+										 firstColor="{firstColorCP.selectedColor}" lastColor="{lastColorCP.selectedColor}"
+										 itemMinHeight="{rowHeightSlider.value}"
+										 itemMaxHeight="{rowHeightSlider.secondValue}"
+										 itemReducedColor="{colapsedRowsColorCP.selectedColor}"
+										 itemReducedSize="{colapsedRowsHeightNS.value}"
+										 itemRollOverColor="{rolloverColorCP.selectedColor}"
+										 itemSelectionColor="{selectedRowColorCP.selectedColor}"
+										 itemSelectionSize="{selectedRowHeightNS.value}"
+										 showToolTip="{displayTooltipsCheckBox.selected}"
+										 useDefaultHeight="false"
+										 change="elasticSearch_changeHandler(event)"
+										 />
+		</s:Group>
+		<s:List id="booksList" includeIn="loaded"
+				width="100%" height="100%"
+				skinClass="fr.kapit.lab.demo.elasticsearch.skins.ListSkin"
+				dataProvider="{applicationModel.books}"
+				creationComplete="booksList_creationCompleteHandler(event)"
+				click="booksList_clickHandler(event)"
+				/>
+		<s:RichText id="emptyText" includeIn="empty" height="100%"
+					horizontalCenter="0" verticalAlign="middle"
+					textAlign="center" color="0xB8B8B8" fontFamily="Calibri">
+			<s:content>
+				<s:p fontSize="20">NO RESULTS</s:p>
+				<s:p fontSize="14">Use filters above to show results</s:p>
+			</s:content>
+		</s:RichText>
+	</s:VGroup>
+	
+</common:TemplateDemoContainer>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				implements="fr.kapit.elasticsearch.render.IElasticItemRenderer"
+				autoDrawBackground="true" doubleClickEnabled="false"
+				currentState="idle"
+				rollOver="this_rollOverHandler(event)"
+				>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.elasticsearch.render.ElasticFilter;
+		
+		[Bindable] private var _elasticFilter:ElasticFilter;
+		
+		[Bindable] private var _contentValue:String;
+		[Bindable] private var _occurrenceValue:String;
+		
+		[Bindable] private var _itemColor:uint = 0xF7F7F7;
+		[Bindable] private var _itemProhibitedColor:uint = 0xF7F7F7;
+		[Bindable] private var _itemRollOverColor:uint = 0xF7F7F7;
+		[Bindable] private var _itemSelectedColor:uint = 0xF7F7F7;
+		[Bindable] private var _labelVisible:Boolean = true;
+
+		private var _itemState:String;
+		private var _baseHeight:Number = 0;
+		
+		public function get baseHeight():Number
+		{
+			return _baseHeight;
+		}
+		public function set baseHeight(value:Number):void
+		{
+			_baseHeight = value;
+		}
+
+		public function get itemState():String
+		{
+			return _itemState;
+		}
+		public function set itemState(value:String):void
+		{
+			_itemState = value;
+			currentState = value;
+		}
+
+		public function set itemColor(value:uint):void
+		{
+			_itemColor = value;
+		}
+		
+		public function set elasticFilter(value:ElasticFilter):void
+		{
+			_elasticFilter = value;
+		}
+		
+		override public function set data(value:Object):void
+		{
+			super.data = value;
+
+			if (!value)
+				_contentValue = _occurrenceValue = "";
+			else
+			{
+				_contentValue = (value.content == "unde") ? "N/D" : value.content;
+				_occurrenceValue = value.occurrence;
+			}
+		}
+		
+		protected function this_rollOverHandler(event:MouseEvent):void
+		{
+			addEventListener(MouseEvent.ROLL_OUT, this_rollOutHandler);
+			if (_itemState != "prohibited" && _itemState != "selected")
+				currentState = "rollover";
+		}
+		
+		protected function this_rollOutHandler(event:MouseEvent):void
+		{
+			removeEventListener(MouseEvent.ROLL_OUT, this_rollOutHandler);
+			currentState = _itemState;
+		}
+	]]>
+	</fx:Script>
+
+	<!-- States -->
+	<s:states>
+		<s:State name="idle" />
+		<s:State name="selected"/>
+		<s:State name="prohibited" />
+		<s:State name="rollover" />
+	</s:states>
+
+	<!-- MXML Content -->	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="{_itemColor}" />
+		</s:fill>
+		<s:fill.rollover>
+			<s:SolidColor color="{_elasticFilter.getStyle('itemRollOverColor')}" />
+		</s:fill.rollover>
+		<s:fill.prohibited>
+			<s:SolidColor color="{_elasticFilter.getStyle('itemReducedColor')}" />
+		</s:fill.prohibited>
+		<s:fill.selected>
+			<s:SolidColor color="{_elasticFilter.getStyle('itemSelectionColor')}" />
+		</s:fill.selected>
+	</s:Rect>
+	<s:Rect width="100%" height="100%" blendMode="normal" blendMode.selected="overlay" alpha.selected=".2">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0xFFFFFF" alpha="0"/>
+				<s:GradientEntry color="0x000000" alpha="0.1"/>
+			</s:LinearGradient>
+		</s:fill>
+		<s:fill.selected>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0x000000" />
+				<s:GradientEntry color="0xFFFFFF" />
+			</s:LinearGradient>
+		</s:fill.selected>
+	</s:Rect>
+	<s:Rect width="100%" height="1" bottom="0">
+		<s:fill>
+			<s:SolidColor color="0x9E9E9E" color.selected="0x0F5C8C"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Group width="100%" verticalCenter="0" visible.prohibited="false">
+		<s:Label id="contentLabel"
+				 text="{_contentValue}" fontFamily="Calibri" fontSize="13"
+				 left="10" right="50" lineBreak="toFit" maxDisplayedLines="1"
+				 color="0x4D4D4D" color.selected="0xFFFFFF"
+				 />
+		<s:Label text="{_occurrenceValue}" fontFamily="Calibri" fontSize="13"
+				 right="5"
+				 color="0x4D4D4D" color.selected="0xFFFFFF"
+				 />
+	</s:Group>
+	
+</s:ItemRenderer>

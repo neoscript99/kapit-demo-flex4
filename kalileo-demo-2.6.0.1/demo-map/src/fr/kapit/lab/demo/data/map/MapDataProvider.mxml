@@ -1,0 +1,202 @@
+<mx:ArrayCollection xmlns:mx="http://www.adobe.com/2006/mxml"
+					xmlns:impl="fr.kapit.map.model.data.impl.*" 
+					xmlns:model="fr.kapit.map.mock.model.*" 
+					xmlns:data="fr.kapit.lab.demo.data.*" 
+					xmlns:map="fr.kapit.lab.demo.data.map.*">
+	<mx:Script>
+		<![CDATA[
+			import fr.kapit.lab.demo.data.constants.FlightRoadTypes;
+			import fr.kapit.lab.demo.data.constants.AirportTypes;
+			
+			[Bindable]
+			public function set flightRoadsDataProvider(value:ArrayCollection):void
+			{
+				flightRoads = value;
+			}
+			public function get flightRoadsDataProvider():ArrayCollection
+			{
+				return flightRoads;
+			}
+			
+			[Bindable]
+			public function get airportsDataProvider():ArrayCollection
+			{
+				return airports;
+			}
+			public function set airportsDataProvider(value:ArrayCollection):void
+			{
+				airports = value;
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:ArrayCollection id="airports">
+		<!-- Europe -->
+		<map:MapCluster uid="g1" label="France" latitude="46.473636" longitude="2.592773">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapCluster uid="g1g1" label="Paris" latitude="48.856091" longitude="2.352479">
+						<map:children>
+							<mx:ArrayCollection>
+								<map:MapAirport  uid="g1g1n0" country="France" label="Paris Charles de Gaulle" type="{AirportTypes.BIG_AIRPORT}" latitude="49.009583" longitude="2.548204" internationalFlights="202" nationalFlights="100"/>
+								<map:MapAirport  uid="g1g1n1" country="France" label="Orly" type="{AirportTypes.BIG_AIRPORT}" latitude="48.729288" longitude="2.369302" internationalFlights="153" nationalFlights="120"/>
+								<map:MapAirport  uid="g1g1n2" country="France" label="Paris le bourget" type="{AirportTypes.MEDIUM_AIRPORT}" latitude="48.96606" longitude="2.436249" internationalFlights="0" nationalFlights="82"/>
+							</mx:ArrayCollection>
+						</map:children>
+					</map:MapCluster>
+					<!--Brest/Breatgne/-->
+					<map:MapCluster uid="g1g2" label="Brest" latitude="48.389629" longitude="-4.494719">
+						<map:children>
+							<mx:ArrayCollection>
+								<map:MapAirport  uid="g1g2n0" country="France" label="Guipavas Airport" type="{AirportTypes.MEDIUM_AIRPORT}" latitude="48.447603" longitude="-4.418556" internationalFlights="63" nationalFlights="73"/>
+							</mx:ArrayCollection>
+						</map:children>
+					</map:MapCluster>
+					<map:MapCluster uid="g1g3" label="Toulouse"  latitude="43.607426" longitude="1.4462">
+						<map:children>
+							<mx:ArrayCollection>
+								<map:MapAirport  uid="g1g3n0" country="France" label="Blagnac Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="43.629713" longitude="1.374368" internationalFlights="81" nationalFlights="82"/>
+							</mx:ArrayCollection>
+						</map:children> 
+					</map:MapCluster>
+					<map:MapCluster uid="g1g4" label="Lyon" latitude="45.764507" longitude="4.836232">
+						<map:children>
+							<mx:ArrayCollection>
+								<map:MapAirport  uid="g1g4n0" country="France" label="Saint Exupery Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="45.720225" longitude="5.080334" internationalFlights="107" nationalFlights="81"/>
+							</mx:ArrayCollection> 
+						</map:children> 
+					</map:MapCluster>
+					<map:MapCluster uid="g1g5" label="Marseille" latitude="43.296486" longitude="5.369958">
+						<map:children>
+							<mx:ArrayCollection>
+								<map:MapAirport  uid="g1g5n0" country="France" label="Marseille Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="43.440156" longitude="5.221518" internationalFlights="119" nationalFlights="97"/>
+							</mx:ArrayCollection>
+						</map:children> 
+					</map:MapCluster>
+				</mx:ArrayCollection>
+			</map:children>
+		</map:MapCluster>
+		<map:MapCluster uid="g2" label="England" latitude="52.438965" longitude="-0.958807">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g2n0" country="England" label="London City Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="51.505232" longitude="0.047295" internationalFlights="221" nationalFlights="111"/>
+				</mx:ArrayCollection> 
+			</map:children>
+		</map:MapCluster>
+		<map:MapCluster uid="g3" label="Spain" latitude="40.886336" longitude="-1.006747">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g3n0" country="Spain" label="Madrid Barajas International Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="40.467371" longitude="-3.568809" internationalFlights="211" nationalFlights="127"/>
+					<map:MapAirport  uid="g3n1" country="Spain" label="Barcelona Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="41.300273" longitude="2.080037" internationalFlights="199" nationalFlights="118"/>
+				</mx:ArrayCollection> 
+			</map:children>
+		</map:MapCluster>
+		<map:MapCluster uid="g4" label="Italy" latitude="40.047496" longitude="15.558638">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g4n0" country="Italy" label="Leornardo Da Vinci Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="41.805689" longitude="12.255514" internationalFlights="202" nationalFlights="99"/>
+					<map:MapAirport  uid="g4n1" country="Italy" label="Palermo Airport" type="{AirportTypes.MEDIUM_AIRPORT}" latitude="38.175346" longitude="13.099324" internationalFlights="91" nationalFlights="59"/>
+				</mx:ArrayCollection>
+			</map:children> 
+		</map:MapCluster>
+		<map:MapCluster uid="g5" label="Germany" latitude="51.030089" longitude="10.460982">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g5n0" country="Germany" label="Munich International Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="48.351956" longitude="11.781838" internationalFlights="243" nationalFlights="127"/>
+					<map:MapAirport  uid="g5n1" country="Germany" label="Dortmund Airport" type="{AirportTypes.MEDIUM_AIRPORT}" latitude="51.518282" longitude="7.616276" internationalFlights="132" nationalFlights="97"/>
+					<map:MapAirport  uid="g5n2" country="Germany" label="Nuremberg Airport" type="{AirportTypes.MEDIUM_AIRPORT}" latitude="49.497911" longitude="11.075857" internationalFlights="124" nationalFlights="87"/>
+				</mx:ArrayCollection> 
+			</map:children>
+		</map:MapCluster>
+		<!-- Afrique -->
+		<map:MapCluster uid="g6" label="Tunisia" latitude="35.908467" longitude="10.207298">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g6n0" country="Tunisia" label="Tunis-Carthage International Airport " type="{AirportTypes.BIG_AIRPORT}" latitude="36.854126" longitude="10.224869" internationalFlights="171" nationalFlights="43"/>
+				</mx:ArrayCollection> 
+			</map:children>
+		</map:MapCluster>
+		<map:MapCluster uid="g7" label="Algeria" latitude="36.229773" longitude="5.583052">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g7n0" country="Algeria" label="Alger Airport " type="{AirportTypes.BIG_AIRPORT}" latitude="36.695452" longitude="3.212502" internationalFlights="182" nationalFlights="63"/>
+				</mx:ArrayCollection>
+			</map:children> 
+		</map:MapCluster>
+		<!-- America -->
+		<map:MapCluster uid="g8" label="USA" latitude="37.41856" longitude="-78.650873">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g8n0" country="USA" label="Richmond International Airport " type="{AirportTypes.BIG_AIRPORT}" latitude="37.506482" longitude="-77.332576" internationalFlights="301" nationalFlights="201"/>
+					<map:MapAirport  uid="g8n1" country="USA" label="Newark Liberty International Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="40.689383" longitude="-74.178299" internationalFlights="245" nationalFlights="105"/>
+					<map:MapAirport  uid="g8n2" country="USA" label="Charleston International Airport" type="{AirportTypes.SMALL_AIRPORT}" latitude="32.885406" longitude="-80.048415" internationalFlights="267" nationalFlights="204"/>
+					<map:MapAirport  uid="g8n3" country="USA" label="Washignton Dulles International Airport" type="{AirportTypes.SMALL_AIRPORT}" latitude="38.94402" longitude="-77.448744" internationalFlights="267" nationalFlights="163"/>
+				</mx:ArrayCollection> 
+			</map:children>
+		</map:MapCluster>
+		<!-- Asia -->
+		<map:MapCluster uid="g10" label="UAE" latitude="25.100749" longitude="55.361606">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g10n0" country="UAE" label="Dubai International Airport " type="{AirportTypes.BIG_AIRPORT}" latitude="25.252085" longitude="55.36475" internationalFlights="301" nationalFlights="99"/>
+					<map:MapAirport  uid="g10n1" country="UAE" label="Al Maktoum International Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="24.895893" longitude="55.164476" internationalFlights="176" nationalFlights="44"/>
+					<map:MapAirport  uid="g10n2" country="UAE" label="Sharjah International Airport" type="{AirportTypes.MEDIUM_AIRPORT}" latitude="25.327594" longitude="55.51607" internationalFlights="101" nationalFlights="63"/>
+				</mx:ArrayCollection> 
+			</map:children>
+		</map:MapCluster>
+		<map:MapCluster uid="g11" label="China" latitude="34.6825" longitude="117.781428">
+			<map:children>
+				<mx:ArrayCollection>
+					<map:MapAirport  uid="g11n0" country="China" label="Capital International Airport " type="{AirportTypes.BIG_AIRPORT}" latitude="40.072602" longitude="116.600678" internationalFlights="277" nationalFlights="233"/>
+					<map:MapAirport  uid="g11n1" country="China" label="Shangai International Airport" type="{AirportTypes.BIG_AIRPORT}" latitude="31.163644" longitude="121.798184" internationalFlights="307" nationalFlights="199"/>
+				</mx:ArrayCollection> 
+			</map:children>
+		</map:MapCluster>
+	</mx:ArrayCollection>
+	
+	<mx:ArrayCollection id="flightRoads">
+		<!--France To France /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g1g2n0" uid="g1e1" label="Flight Road" flightsCapacity="5" flights="4"/>
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g1g3n0" uid="g1e2" label="Flight Road" flightsCapacity="8" flights="3"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g1g4n0" uid="g1e3" label="Flight Road" flightsCapacity="10" flights="8"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g1g5n0" uid="g1e5" label="Flight Road" flightsCapacity="10" flights="7"/>
+		<map:MapFlightRoad sourceNode="g1g1n2" targetNode="g1g4n0" uid="g1e5" label="Flight Road" flightsCapacity="10" flights="7"/>
+		<!--France To England /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g2n0" uid="g2e1" label="Flight Road" flightsCapacity="16" flights="12"/>
+		<!--France To Spain /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g3n0" uid="g3e1" label="Flight Road" flightsCapacity="16" flights="4"/>
+		<map:MapFlightRoad sourceNode="g1g3n0" targetNode="g3n1" uid="g3e2" label="Flight Road" flightsCapacity="16" flights="4"/>
+		<!--France To Italy /-->
+		<map:MapFlightRoad sourceNode="g1g5n0" targetNode="g4n0" uid="g4e1" label="Flight Road" flightsCapacity="10" flights="6"/>
+		<map:MapFlightRoad sourceNode="g1g5n0" targetNode="g4n1" uid="g4e2" label="Flight Road" flightsCapacity="10" flights="5"/>
+		<!--France To Germany /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g5n0" uid="g5e1" label="Flight Road" flightsCapacity="4" flights="3"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g5n1" uid="g5e2" label="Flight Road" flightsCapacity="4" flights="4"/>
+		<map:MapFlightRoad sourceNode="g1g4n0" targetNode="g5n1" uid="g5e3" label="Flight Road" flightsCapacity="2" flights="2"/>
+		<map:MapFlightRoad sourceNode="g1g4n0" targetNode="g5n2" uid="g5e4" label="Flight Road" flightsCapacity="2" flights="2"/>
+		<!--France To Tunisia /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g6n0" uid="g6e1" label="Flight Road" flightsCapacity="12" flights="6"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g6n2" uid="g6e2" label="Flight Road" flightsCapacity="12" flights="10"/>
+		<map:MapFlightRoad sourceNode="g1g5n0" targetNode="g6n0" uid="g6e3" label="Flight Road" flightsCapacity="4" flights="3"/>
+		<map:MapFlightRoad sourceNode="g1g5n0" targetNode="g6n1" uid="g6e4" label="Flight Road" flightsCapacity="4" flights="2"/>
+		<!--France To Algeria /-->
+		<map:MapFlightRoad sourceNode="g1g5n0" targetNode="g7n0" uid="g7e1" label="Flight Road" flightsCapacity="9" flights="5"/>
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g7n0" uid="g7e2" label="Flight Road" flightsCapacity="14" flights="6"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g7n0" uid="g7e3" label="Flight Road" flightsCapacity="8" flights="6"/>
+		<!--France To USA /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g8n0" uid="g8e1" label="Flight Road" flightsCapacity="35" flights="22"/>
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g8n1" uid="g8e2" label="Flight Road" flightsCapacity="26" flights="10"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g8n2" uid="g8e3" label="Flight Road" flightsCapacity="40" flights="25"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g8n3" uid="g8e4" label="Flight Road" flightsCapacity="50" flights="29"/>
+		<!--France To UAE /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g10n0" uid="g10e1" label="Flight Road" flightsCapacity="4" flights="4"/>
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g10n1" uid="g10e2" label="Flight Road" flightsCapacity="2" flights="2"/>
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g10n2" uid="g10e3" label="Flight Road" flightsCapacity="1" flights="1"/>
+		<!--France To China /-->
+		<map:MapFlightRoad sourceNode="g1g1n0" targetNode="g11n0" uid="g11e1" label="Flight Road" flightsCapacity="4" flights="4"/>
+		<map:MapFlightRoad sourceNode="g1g1n1" targetNode="g11n1" uid="g11e2" label="Flight Road" flightsCapacity="2" flights="1"/>
+	</mx:ArrayCollection>
+	
+	
+</mx:ArrayCollection>

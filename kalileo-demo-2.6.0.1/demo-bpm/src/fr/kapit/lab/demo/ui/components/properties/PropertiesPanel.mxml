@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group implements="fr.kapit.lab.demo.ui.components.properties.IPropertiesConfigPanel"
+		 xmlns:edge="fr.kapit.lab.demo.ui.components.properties.edge.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:group="fr.kapit.lab.demo.ui.components.properties.group.*"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:node="fr.kapit.lab.demo.ui.components.properties.node.*"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 width="100%"
+		 >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.model.DiagrammerModel;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			if (null == diagrammerModel)
+			{
+				return;
+			}
+
+			if (diagrammerModel.isNodeSelection(true))
+			{
+				currentState = "nodeProperties";
+				nodeProperties.synchronize();
+				return;
+			}
+			if (diagrammerModel.isEdgeSelection(true))
+			{
+				currentState = "edgeProperties";
+				edgeProperties.synchronize();
+				return;
+			}
+			if (diagrammerModel.isGroupSelection(true))
+			{
+				currentState = "groupProperties";
+				groupProperties.synchronize();
+				return;
+			}
+			currentState = "empty";
+		}
+
+
+		/**
+		 * Returns the current diagrammer model.
+		 */
+		public function get diagrammerModel():DiagrammerModel
+		{
+			if (null == appModel)
+			{
+				return null;
+			}
+			return appModel.diagrammerModel;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			_applicationModel = objValue;
+		}
+	]]>
+	</fx:Script>
+
+	<s:states>
+		<s:State name="empty" />
+		<s:State name="nodeProperties" />
+		<s:State name="edgeProperties" />
+		<s:State name="groupProperties" />
+	</s:states>
+
+	<node:NodePropertiesPanel id="nodeProperties"
+							  includeIn="nodeProperties"
+							  appModel="{appModel}"
+							  />
+	<edge:EdgePropertiesPanel id="edgeProperties"
+							  includeIn="edgeProperties"
+							  appModel="{appModel}"
+							  />
+	<group:GroupPropertiesPanel id="groupProperties"
+								includeIn="groupProperties"
+								appModel="{appModel}"
+								/>
+
+</s:Group>

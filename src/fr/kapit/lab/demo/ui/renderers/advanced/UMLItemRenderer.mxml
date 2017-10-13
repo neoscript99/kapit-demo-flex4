@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:advanced="fr.kapit.lab.demo.ui.renderers.advanced.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:renderers="fr.kapit.lab.demo.ui.renderers.*"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 implements="fr.kapit.visualizer.renderers.IRenderer, fr.kapit.visualizer.renderers.ISelectable, fr.kapit.diagrammer.renderers.IEditable, fr.kapit.visualizer.renderers.IAnchorable"
+		 width="160" height="196" minHeight="196"
+		 currentState="normal"
+		 creationComplete="this_creationCompleteHandler(event)" xmlns:data="fr.kapit.visualizer.utils.data.*">
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.data.UMLData;
+		import fr.kapit.visualizer.base.IItem;
+		import fr.kapit.visualizer.base.ISprite;
+		
+		import mx.events.FlexEvent;
+		
+		import spark.events.TextOperationEvent;
+
+		protected var _data:Object;
+		protected var _forceSizeUpdate:Boolean;
+		public function get forceSizeUpdate():Boolean
+		{
+			return _forceSizeUpdate;
+		}
+		public function set forceSizeUpdate(value:Boolean):void
+		{
+			_forceSizeUpdate = value;
+			invalidateDisplayList();
+		}
+		/* *******
+		* Internal Getters/Setters
+		*************/
+		
+		protected var _isEditionRequested:Boolean=false;
+		protected var _rendererStateChanged:Boolean;
+		public function get isEditionRequested():Boolean
+		{
+			return _isEditionRequested;
+		}
+		
+		public function set isEditionRequested(value:Boolean):void
+		{
+			_isEditionRequested = value;
+			_rendererStateChanged = true;
+			invalidateProperties();
+		}
+		
+		
+		/* *********
+		* IAnchorable interface
+		**************/
+		[Bindable]
+		private var anchorPoints:Vector.<Number> = Vector.<Number>([0,0.5,0.5,0,1,0.5,0.5,1]);
+		public function get anchors():AnchorsDescriptor
+		{
+			return anchorsDescriptor; 	// Can be extracted from data also if 
+										// a ports property is set
+		}
+		public function set anchors(value:AnchorsDescriptor):void
+		{
+			anchorsDescriptor = value;
+		}
+		
+		public function get useStrictAnchoring():Boolean
+		{
+			return false;
+		}
+		public function set useStrictAnchoring(value:Boolean):void
+		{
+			//No need for settings
+		}
+		
+		
+		/* *******
+		* ISelectable impl
+		*************/
+		
+		private var _isSelected:Boolean;
+		[Bindable]
+		public function get isSelected():Boolean
+		{
+			return _isSelected;
+		}
+		
+		public function set isSelected(value:Boolean):void
+		{
+			_isSelected = value;
+			_rendererStateChanged = true;
+			invalidateProperties();
+		}
+		
+		private var _isHighlighted:Boolean;
+		[Bindable]
+		public function get isHighlighted():Boolean
+		{
+			return _isHighlighted;
+		}
+		public function set isHighlighted(value:Boolean):void
+		{
+			_isHighlighted = value;
+		}
+		
+		/* *******
+		* IRenderer impl
+		*************/
+		
+		[Bindable]
+		protected var _umlData:UMLData=new UMLData();
+		public function get data():Object
+		{
+			return _data;
+		}
+		public function set data(value:Object):void
+		{
+			_data = value;
+			_umlData = _data as UMLData;
+			forceSizeUpdate = true;
+			
+		}
+
+		protected var _isFixed:Boolean;
+		public function get isFixed():Boolean
+		{
+			return _isFixed;
+		}
+		public function set isFixed(value:Boolean):void
+		{
+			_isFixed = value;
+		}
+
+		protected var _item:IItem;
+		protected var _sprite:ISprite;
+		public function get item():IItem
+		{
+			return _item;
+		}
+		public function set item(value:IItem):void
+		{
+			_item = value;
+			_sprite = _item as ISprite;
+		}
+		
+		/* *******
+		* IEditable impl
+		*************/
+
+		protected var _dataModel:Object;
+		public function get dataModel():Object
+		{
+			return _dataModel;
+		}
+		public function set dataModel(value:Object):void
+		{
+			_dataModel = value;
+		}
+
+		protected var _isSizeFixed:Boolean;
+		public function get isSizeFixed():Boolean
+		{
+			return _isSizeFixed;
+		}
+		public function set isSizeFixed(value:Boolean):void
+		{
+			_isSizeFixed = value;
+		}
+
+		protected var _limitHeight:Number= 196;
+		public function get limitHeight():Number
+		{
+			return _limitHeight;
+		}
+
+		protected var _limitWidth:Number= 160;
+		public function get limitWidth():Number
+		{
+			return _limitWidth
+		}
+
+		protected var _prohibitLinkingFrom:Boolean;
+
+		public function get prohibitLinkingFrom():Boolean
+		{
+			return _prohibitLinkingFrom;
+		}
+
+		public function set prohibitLinkingFrom(value:Boolean):void
+		{
+			_prohibitLinkingFrom = value;
+		}
+
+
+		protected var _prohibitLinkingTo:Boolean;
+
+		public function get prohibitLinkingTo():Boolean
+		{
+			return _prohibitLinkingTo;
+		}
+
+		public function set prohibitLinkingTo(value:Boolean):void
+		{
+			_prohibitLinkingTo = value;
+		}
+		
+		/* *******
+		* Overriden Methods
+		*************/
+		
+		protected override function commitProperties():void
+		{
+			super.commitProperties();
+			if(_rendererStateChanged)
+			{
+				commitRendererStates();
+				_rendererStateChanged = false;
+			}
+		}
+		protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void{
+			super.updateDisplayList(unscaledWidth,unscaledHeight);
+			if(_forceSizeUpdate)
+			{
+				fitToContent();
+				_forceSizeUpdate = false;
+			}
+		}
+		/* *******
+		* Helper Methods
+		*************/
+		
+		protected function commitRendererStates():void
+		{
+			if(!_isSelected && _isEditionRequested)
+				_isEditionRequested = false;
+			currentState = (_isEditionRequested) ? "editing" : "normal";
+			isFixed = (currentState == "editing")
+		}
+		
+		/* *******
+		* Event Handlers
+		*************/
+		
+		protected function classTextArea_changeHandler(event:TextOperationEvent):void
+		{
+			_umlData.classs = classTextArea.text;
+			forceSizeUpdate = true;
+		}
+		protected function attributesBox_changeHandler(event:Event):void
+		{
+			_umlData.attributes = attributesBox.text;
+			forceSizeUpdate = true;
+		}
+		protected function operationsBox_changeHandler(event:Event):void
+		{
+			_umlData.operations = operationsBox.text;
+			forceSizeUpdate = true;
+		}
+		protected function this_doubleClickHandler(event:MouseEvent):void
+		{
+			isEditionRequested=true;
+		}
+		protected function this_creationCompleteHandler(event:FlexEvent):void
+		{
+			addEventListener(MouseEvent.DOUBLE_CLICK, this_doubleClickHandler);
+			forceSizeUpdate = true;
+		}
+		
+		
+		
+		private function fitToContent():void
+		{
+			attributesBox.height = attributesBox.effectiveHeight<attributesBox.minHeight ? attributesBox.minHeight : attributesBox.effectiveHeight;
+			operationsBox.height = operationsBox.effectiveHeight<operationsBox.minHeight ? operationsBox.minHeight : operationsBox.effectiveHeight;
+			height = attributesBox.height + operationsBox.height + detailsGroup.top;
+		}
+		
+	]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<data:AnchorsDescriptor id="anchorsDescriptor" type="{AnchorsDescriptor.ANCHORS_TYPE_LIST}" anchorPoints="{anchorPoints}"/>
+	</fx:Declarations>
+
+	<s:states>
+		<s:State name="editing" />
+		<s:State name="normal" />
+	</s:states>
+
+	<s:Rect width="100%" height="100%"
+			bottomLeftRadiusX="3" bottomLeftRadiusY="3" bottomRightRadiusX="3"
+			bottomRightRadiusY="3"
+			>
+		<s:stroke>
+			<s:SolidColorStroke color="#808080" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="#EFEFEF" />
+		</s:fill>
+	</s:Rect>
+
+	<s:Rect height="40" left="0" right="0">
+		<s:fill>
+			<s:LinearGradient>
+				<s:GradientEntry color="#2A82C1"/>
+				<s:GradientEntry color="#2F9CD2"/>
+			</s:LinearGradient>
+		</s:fill>
+		
+		<s:stroke>
+			<s:SolidColorStroke color="#092E49" />
+		</s:stroke>
+	</s:Rect>
+
+	<s:TextArea id="classTextArea"
+				includeIn="editing"
+				height="34"
+				left="3" right="3" top="3"
+				textAlign="center" verticalAlign="middle"
+				text="{_umlData.classs.toUpperCase()}"
+				change="classTextArea_changeHandler(event)"
+				/>
+
+		<s:Label id="labelTxt"
+				 includeIn="normal"
+				 width="100%" height="40"
+				 color="0xffffff" fontSize="16" textAlign="center" verticalAlign="middle"
+				 text="{_umlData.classs.toUpperCase()}" 
+				 lineBreak="toFit" maxDisplayedLines="1"
+				 />
+
+	
+
+	<s:VGroup id="detailsGroup" width="100%" height="100%" top="40" gap="0">
+		<advanced:UMLBox id="attributesBox"
+						 width="100%" height="78" minHeight="78"
+						 currentState="{currentState}" text="{_umlData.attributes}"
+						 labelText="Attributes"
+						 change="attributesBox_changeHandler(event)"
+						 />
+		<advanced:UMLBox id="operationsBox"
+						 width="100%" height="78" minHeight="78"
+						 currentState="{currentState}" text="{_umlData.operations}"
+						 labelText="Operations"
+						 change="operationsBox_changeHandler(event)"
+						 />
+	</s:VGroup>
+</s:Group>

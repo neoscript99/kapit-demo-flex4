@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Graphic version="2.0" ai:appVersion="15.0.2.399" ATE:version="1.0.0" flm:version="1.0.0" d:using="" xmlns="http://ns.adobe.com/fxg/2008" xmlns:ATE="http://ns.adobe.com/ate/2009" xmlns:ai="http://ns.adobe.com/ai/2009" xmlns:d="http://ns.adobe.com/fxg/2008/dt" xmlns:flm="http://ns.adobe.com/flame/2008">
+  <Library/>
+  <Group>
+      <Path y="-0.000152267" winding="nonZero" data="M5 0.681793C5 -0.231293 7 -0.231293 7 0.706207L7 4.17007 12 8.17007 12 9.15543 7 7.17007 7 10.2628 8 11.2287 8 12.1701 6 11.1701 4 12.1701 4 11.2277 5 10.2628 5 7.17007 0 9.15543 0 8.17007 5 4.17007 5 0.681793 5 0.681793Z">
+        <fill>
+          <SolidColor/>
+        </fill>
+      </Path>
+   </Group>
+</Graphic>

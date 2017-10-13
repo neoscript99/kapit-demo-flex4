@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel xmlns:component="fr.kapit.lab.demo.panel.component.*"
+						 xmlns:components="fr.kapit.lab.demo.common.components.*"
+						 xmlns:forms="fr.kapit.lab.demo.forms.*"
+						 xmlns:fx="http://ns.adobe.com/mxml/2009"
+						 xmlns:mx="library://ns.adobe.com/flex/mx"
+						 xmlns:overview="fr.kapit.visualizer.tools.overview.*"
+						 xmlns:s="library://ns.adobe.com/flex/spark"
+						 skinClass="fr.kapit.lab.demo.common.skins.OptionsLayoutPanelSkin"
+						 width="100%"
+						 maxContentHeight="0" title="Layout"
+						 collapsible="false"
+						 >
+
+	<fx:Declarations>
+		<s:ArrayCollection id="layoutList">
+
+			<component:LayoutSelectorHeaderButton 
+												  icon="{EmbeddedAssets.IMG_LAYOUT_BALLOON}"
+												  label="Balloon"
+												  layoutType="{BalloonLayout.ID}"
+												  state="BalloonLayout"
+												  tooltip="Balloon : BalloonLayout"
+												  />
+			<component:LayoutSelectorHeaderButton 
+												  icon="{EmbeddedAssets.IMG_LAYOUT_RADIAL}"
+												  label="Radial"
+												  layoutType="{RadialLayout.ID}"
+												  state="RadialLayout"
+												  tooltip="Radial : RadialLayout"
+												  />
+
+			<component:LayoutSelectorHeaderButton 
+												  icon="{EmbeddedAssets.IMG_LAYOUT_ORGANIC}"
+												  label="Organic"
+												  layoutType="{StaticGEMLayout.ID}"
+												  state="StaticGEMLayout"
+												  tooltip="Organic : StaticGEMLayout"
+												  />
+			<component:LayoutSelectorHeaderButton 
+												  icon="{EmbeddedAssets.IMG_LAYOUT_HIERARCHICAL_CYCLIC}"
+												  label="Hierarchical cyclic"
+												  layoutType="{SugiyamaLayout.ID}"
+												  state="SugiyamaLayout"
+												  tooltip="Hierarchical cyclic : SugiyamaLayout"
+												  />
+			<component:LayoutSelectorHeaderButton 
+												  icon="{EmbeddedAssets.IMG_LAYOUT_CIRCULAR}"
+												  label="Circular"
+												  layoutType="{SingleCycleCircularLayout.ID}"
+												  state="SingleCycleCircularLayout"
+												  tooltip="Circular : SingleCycleCircularLayout"
+												  />
+			<component:LayoutSelectorHeaderButton 
+												  icon="{EmbeddedAssets.IMG_LAYOUT_ORTHOGONAL}"
+												  label="Orthogonal"
+												  layoutType="{OrthogonalLayout.ID}"
+												  state="OrthogonalLayout"
+												  tooltip="Orthogonal : OrthogonalLayout"
+												  />
+		</s:ArrayCollection>
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.lab.demo.managers.AssetsManager;
+		import fr.kapit.lab.demo.ui.components.map.MapVisualizer;
+		import fr.kapit.layouts.algorithms.balloon.BalloonLayout;
+		import fr.kapit.layouts.algorithms.circular.SingleCycleCircularLayout;
+		import fr.kapit.layouts.algorithms.forcedirected.fade.ProgressiveFadeLayout;
+		import fr.kapit.layouts.algorithms.forcedirected.gem.StaticGEMLayout;
+		import fr.kapit.layouts.algorithms.hierarchical.HierarchicalLayout;
+		import fr.kapit.layouts.algorithms.orthogonal.OrthogonalLayout;
+		import fr.kapit.layouts.algorithms.radial.RadialLayout;
+		import fr.kapit.layouts.algorithms.sugiyama.SugiyamaLayout;
+		import fr.kapit.visualizer.Visualizer;
+
+		import spark.events.IndexChangeEvent;
+
+		private var _visualizer:Visualizer;
+
+		[Bindbale]
+		public function get visualizer():Visualizer
+		{
+			return _visualizer;
+		}
+
+		public function set visualizer(value:Visualizer):void
+		{
+			_visualizer = value;
+		}
+
+
+		protected function layoutSelector_changeHandler(event:IndexChangeEvent):void
+		{
+			_visualizer.layoutID = layoutSelector.selectedItem.layoutType;
+		}
+	]]>
+	</fx:Script>
+	<components:headerContent>
+		<s:HGroup width="100%"
+				  paddingLeft="5" paddingRight="5" horizontalAlign="center"
+				  verticalAlign="middle"
+				  >
+			<component:KapHeaderPanelButtonBar id="layoutSelector"
+											   dataProvider="{layoutList}"
+											   selectedIndex="0"
+											   requireSelection="true"
+											   change="layoutSelector_changeHandler(event)"
+											   />
+		</s:HGroup>
+	</components:headerContent>
+
+</components:OptionsPanel>

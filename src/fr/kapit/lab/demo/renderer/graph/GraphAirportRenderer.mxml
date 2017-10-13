@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<base:BaseAirportRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  xmlns:base="fr.kapit.lab.demo.renderer.base.*"
+						  includeLabel="true"
+						  >
+	<fx:Script>
+		<![CDATA[
+			
+			protected static var MAX_SIZE:Number = 96;
+			protected static var MIN_SIZE:Number = 48;
+			
+			public override function set data(value:Object):void
+			{
+				super.data = value;
+				width = height = MIN_SIZE+(MAX_SIZE - MIN_SIZE)*(_airport.internationalFlights+_airport.nationalFlights)/500;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</base:BaseAirportRenderer>

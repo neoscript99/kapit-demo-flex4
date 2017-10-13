@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<renderers:DiagramItemRendererBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+								   xmlns:s="library://ns.adobe.com/flex/spark" 
+								   xmlns:mx="library://ns.adobe.com/flex/mx"
+								   width="40" height="40" 
+								   limitWidth="40" limitHeight="40"
+								   xmlns:renderers="fr.kapit.lab.demo.ui.renderers.*">
+	<fx:Script>
+		<![CDATA[
+			import spark.filters.GlowFilter;
+			public override function set isSelected(value:Boolean):void
+			{
+				super.isSelected = value;
+				if(value)
+					filters = [new GlowFilter(0x0C71B3,1,5,5,3)];
+				else
+					filters = null;
+			}
+			public override function set isHighlighted(value:Boolean):void
+			{
+				super.isHighlighted = value;
+				if(value)
+					filters = [new GlowFilter(0x0C71B3,0.7,4,4)];
+				else
+					filters = null;
+			}
+		]]>
+	</fx:Script>
+	<renderers:BPMRenderer
+		id="renderer"
+		width="100%"
+		height="100%"
+		skinClass="fr.kapit.lab.demo.ui.renderers.BMPRendererSkin"
+		icon="{data.icon}"
+		/>
+	
+</renderers:DiagramItemRendererBase>

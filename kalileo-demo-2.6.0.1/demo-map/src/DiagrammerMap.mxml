@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application preloader="fr.kapit.lab.demo.preloader.GenericPreloader"
+			   xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:views="fr.kapit.lab.demo.ui.views.*"
+			   width="100%" height="100%"
+			   >
+
+	<fx:Style source="fr/kapit/lab/demo/styles/skins.css" />
+	<fx:Style source="fr/kapit/lab/demo/common/assets/styles/style.css" />
+	<fx:Style source="fr/kapit/lab/demo/common/assets/styles/skins.css" />
+
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace model "fr.kapit.lab.demo.model.*";
+		@namespace views "fr.kapit.lab.demo.ui.views.*";
+		@namespace components "fr.kapit.lab.demo.common.components.*";
+		
+		components|OptionsPanel
+		{
+			skinClass: ClassReference("fr.kapit.lab.demo.common.skins.KalileoOptionsPanelSkin")
+		}
+		
+	</fx:Style>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.actionscript.lang.ApplicationContext;
+		import fr.kapit.actionscript.lang.command.CommandEvent;
+		import fr.kapit.actionscript.net.command.BaseDataLoaderCommand;
+		import fr.kapit.actionscript.net.command.INetLoaderCommand;
+		import fr.kapit.actionscript.system.debug.assert;
+		import fr.kapit.logging.FlexConsoleTarget;
+
+		import mx.events.FlexEvent;
+		import mx.logging.Log;
+		import mx.logging.targets.TraceTarget;
+
+		/**
+		 * Creation complete: builds up the log targets
+		 *
+		 * @param event
+		 */
+		protected function this_creationCompleteHandler(event:FlexEvent):void
+		{
+			createLogTargets();
+		}
+
+		/**
+		 * @private
+		 * Builds up the log targets.
+		 */
+		private function createLogTargets():void
+		{
+			var objTraceTarget:TraceTarget = new TraceTarget();
+			objTraceTarget.filters = [ "fr.kapit.lab.demo.*" ];
+			Log.addTarget(objTraceTarget);
+
+
+			// to use with the FlexConsole AIR application
+			var objConsoleTarget:FlexConsoleTarget = new FlexConsoleTarget();
+			objConsoleTarget.includeDate = true;
+			objConsoleTarget.includeTime = true;
+			objConsoleTarget.includeCategory = true;
+			objConsoleTarget.includeLevel = true;
+			objConsoleTarget.filters = [ "fr.kapit.lab.demo.*" ];
+			Log.addTarget(objConsoleTarget);
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<views:MainView width="100%" height="100%" />
+</s:Application>

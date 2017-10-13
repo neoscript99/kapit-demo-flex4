@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<common:TemplateDemoContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+							  xmlns:s="library://ns.adobe.com/flex/spark"
+							  xmlns:pictogramChart="fr.kapit.pictogramChart.*"
+							  xmlns:common="fr.kapit.lab.demo.common.components.*"
+							  width="100%" height="100%"
+							  title="Pictogram Chart Demo"
+							  openOptions="true" currentState="grid"
+							  creationComplete="this_creationCompleteHandler()" xmlns:pictogram="fr.kapit.pictogram.*"
+							  >
+
+	<common:layout>
+		<s:VerticalLayout gap="0" />
+	</common:layout>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.pictogram.model.Country;
+		import fr.kapit.lab.demo.pictogram.renderers.UnitRenderer;
+		import fr.kapit.lab.demo.pictogram.skins.VerticalPictogramCellSkin;
+		import fr.kapit.pictogram.constants.UnitFillPolicy;
+		import fr.kapit.pictogram.renderers.PictogramDefaultItemRenderer;
+
+		import mx.collections.ArrayCollection;
+		import mx.formatters.NumberBase;
+
+		import spark.events.IndexChangeEvent;
+
+		//--------------------------------------
+		//  Datas
+		//--------------------------------------
+
+		[Embed(source="/fr/kapit/lab/demo/pictogram/assets/xml/datas.xml", mimeType="application/octet-stream")]
+		private var datasXML:Class;
+
+		//--------------------------------------
+		//  Properties
+		//--------------------------------------
+
+		[Bindable] private var _timer:Timer;
+
+		[Bindable] private var _dataProvider:ArrayCollection;
+
+		private var _dataFormatter:NumberBase;
+
+		protected function this_creationCompleteHandler():void
+		{
+			_timer = new Timer(200);
+			_timer.addEventListener(TimerEvent.TIMER, timer_timerHandler);
+
+			_dataFormatter = new NumberBase(".", ".", ".", ".");
+
+			var ba:ByteArray = new datasXML() as ByteArray;
+			var xmlList:XMLList = new XML(ba.readUTFBytes(ba.length)).elements();
+			ba = null;
+
+			_dataProvider = new ArrayCollection;
+			_dataProvider.disableAutoUpdate();
+
+			var xml:XML;
+			for each (xml in xmlList)
+			_dataProvider.addItem(new Country(xml));
+
+			_dataProvider.enableAutoUpdate();
+			syncPictogramChart();
+		}
+
+		protected function timer_timerHandler(event:TimerEvent):void
+		{
+			hSlider.value = (hSlider.value >= hSlider.maximum) ? hSlider.minimum : hSlider.value + 1;
+
+			if (hSlider.value == hSlider.minimum)
+			{
+				_timer.stop();
+				playButton.selected = false;
+			}
+			syncPictogramChart();
+		}
+
+		protected function playButton_clickHandler(event:MouseEvent):void
+		{
+			_timer.running ? pause() : play();
+		}
+
+		protected function pictogramChart_percentageFunction(item:Object):Number
+		{
+			return item ? Number(item.value / 24) : 0;
+		}
+
+		protected function hSlider_dataTipFormatFunction(value:Number):String
+		{
+			return _dataFormatter.formatPrecision(String(value), 0);
+		}
+
+		private function play():void
+		{
+			syncPictogramChart();
+			_timer.start();
+		}
+
+		private function pause():void
+		{
+			_timer.stop();
+		}
+
+
+		private function syncPictogramChart():void
+		{
+			var country:Country;
+			for each (country in _dataProvider)
+			country.value = country.getData(hSlider.value);
+
+			pictogramChart.updatePercentages();
+		}
+
+		protected function layoutDropDL_changeHandler(event:IndexChangeEvent):void
+		{
+			currentState = (event.newIndex == 1) ? "vertical" : "grid";
+		}
+
+		private function pictogramChart_valueLabelFunction(item:Country):String
+		{
+			return item.value.toFixed(1);
+		}
+	]]>
+	</fx:Script>
+
+	<common:states>
+		<s:State name="grid" />
+		<s:State name="vertical" />
+	</common:states>
+
+	<common:optionsContent>
+<!--
+		LAYOUT :
+-->
+		<common:OptionsPanel title="Layout" width="100%" height="95">
+			<!-- Layout -->
+			<common:OptionElement title="Layout:">
+				<s:DropDownList id="layoutDropDL" width="100%"
+								buttonMode="true" requireSelection="true"
+								change="layoutDropDL_changeHandler(event)"
+								>
+					<s:ArrayList>
+						<fx:Object label="Grid" />
+						<fx:Object label="Vertical" value="VerticalMode" />
+					</s:ArrayList>
+				</s:DropDownList>
+			</common:OptionElement>
+		</common:OptionsPanel>
+<!--
+		UNIT RENDERER :
+-->
+		<common:OptionsPanel title="Unit Renderer" width="100%">
+			<common:OptionElement>
+				<common:layout>
+					<s:VerticalLayout gap="10" />
+				</common:layout>
+				<s:CheckBox id="unitRendererFillCheckBox"
+							label="Unit renderer may be filled partially"
+							selected="true" buttonMode="true"
+							/>
+				<s:CheckBox id="useCustomUnitRenderersCheckBox" width="190"
+							label="Use customs unit renderers"
+							selected="true" buttonMode="true"
+							/>
+				<s:CheckBox id="unitAlphaCodingCheckBox"
+							label="Unit alpha coding"
+							enabled="{!useCustomUnitRenderersCheckBox.selected}"
+							buttonMode="true"
+							/>
+			</common:OptionElement>
+			<common:OptionElement title="Unit background colors:"
+								  enabled="{!useCustomUnitRenderersCheckBox.selected}">
+				<common:layout>
+					<s:HorizontalLayout gap="6" />
+				</common:layout>
+				<common:ColorPicker id="unitBackgroundFirstColorCP"
+									selectedColor="0x2385C4"
+									/>
+				<common:ColorPicker id="unitBackgroundSecondColorCP"
+									selectedColor="0x1B66AF"
+									/>
+			</common:OptionElement>
+			<common:OptionElement title="Unit background alphas:"
+								  enabled="{!useCustomUnitRenderersCheckBox.selected}">
+				<common:HRangeSlider id="unitBackgroundAlphasSlider" width="200"
+									 minimum="0" maximum="1" stepSize="0.1" tickNumber="11"
+									 value="0.8" secondValue="1" useRangeGradients="false"
+									 />
+			</common:OptionElement>
+			<common:OptionElement title="Unit line color:"
+								  enabled="{!useCustomUnitRenderersCheckBox.selected}">
+				<common:ColorPicker id="unitLineColorCP"
+									selectedColor="0x0573AD"
+									/>
+			</common:OptionElement>
+			<common:OptionElement title="Unit line alpha:"
+								  enabled="{!useCustomUnitRenderersCheckBox.selected}">
+				<common:HRangeSlider id="unitLineAlphaSlider" width="200"
+									 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+									 minimum="0" maximum="1" stepSize="0.1" tickNumber="11" value="0.3"
+									 />
+			</common:OptionElement>
+			<common:OptionElement title="Unit line thickness:"
+								  enabled="{!useCustomUnitRenderersCheckBox.selected}">
+				<common:HRangeSlider id="unitLineThicknessSlider" width="200"
+									 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+									 minimum="1" maximum="5" stepSize="1" tickNumber="5" value="1"
+									 />
+			</common:OptionElement>
+			<common:OptionElement title="Unit corner radius:"
+								  enabled="{!useCustomUnitRenderersCheckBox.selected}">
+				<common:HRangeSlider id="unitRoundRadiusSlider" width="200"
+									 skinClass="fr.kapit.lab.demo.common.skins.HSliderSkin"
+									 minimum="0" maximum="15" stepSize="1" tickNumber="16" value="3"
+									 />
+			</common:OptionElement>
+		</common:OptionsPanel>
+	</common:optionsContent>
+
+	<s:Group width="100%" height="68">
+		<s:Rect left="0" right="0" top="0" bottom="0">
+			<s:fill>
+				<s:SolidColor color="0xF2F2F2" />
+			</s:fill>
+		</s:Rect>
+		<s:VGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="20" paddingRight="20" paddingTop="10">
+			<s:RichText fontFamily="Calibri" color="0x333333">
+				<s:content><s:p><s:span>CO₂ emissions</s:span> <s:span fontStyle="italic">(in metric tons per capita)</s:span></s:p></s:content>
+				<s:filters>
+					<s:DropShadowFilter angle="90" blurX="0" blurY="0" color="0xFFFFFF" distance="1" quality="2"/>
+				</s:filters>
+			</s:RichText>
+			<common:HRangeSlider id="emissionSlider"
+								 width="100%"
+								 minimum="0" maximum="24" stepSize="0.5" tickNumber="49" bigTickNumber="7"
+								 value="0" secondValue="24"
+								 >
+				<common:rangeGradients>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry color="0xD33725" />
+						<s:GradientEntry color="0xA52C1D" />
+					</s:LinearGradient>
+				</common:rangeGradients>
+			</common:HRangeSlider>
+		</s:VGroup>
+	</s:Group>
+
+	<s:Rect width="100%" height="1">
+		<s:fill>
+			<s:SolidColor color="0xB3B3B3" />
+		</s:fill>
+	</s:Rect>
+
+	<s:Group width="100%" height="100%">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0xF5F5F5" />
+			</s:fill>
+		</s:Rect>
+		<pictogram:PictogramChart id="pictogramChart"
+						   width="100%" height="100%"
+						   dataProvider="{_dataProvider}"
+						   cellHeight.vertical="90" cellHeight.grid="NaN"
+						   cellSkinClass.grid="fr.kapit.lab.demo.pictogram.skins.CustomPictogramCellSkin"
+						   cellSkinClass.vertical="fr.kapit.lab.demo.pictogram.skins.VerticalPictogramCellSkin"
+						   columnCount.grid="4" rowCount.grid="3"
+						   columnCount.vertical="1" rowCount.vertical="6"
+						   columnCountReference="4"
+						   enableRoundedPercentages="{!unitRendererFillCheckBox.selected}"
+						   metaDataField="name"
+						   percentageFunction="pictogramChart_percentageFunction"
+						   rowCountReference="3"
+						   symbolField="url"
+						   unitAlphaCoding="{unitAlphaCodingCheckBox.selected}"
+						   unitBackgroundAlphas="{[unitBackgroundAlphasSlider.value, unitBackgroundAlphasSlider.secondValue]}"
+						   unitBackgroundColors="{[unitBackgroundFirstColorCP.selectedColor, unitBackgroundSecondColorCP.selectedColor]}"
+						   unitColumnCount="3" unitRowCount="4"
+						   unitFillPolicy.vertical="{UnitFillPolicy.FILL_LTR}"
+						   unitItemRenderer="{useCustomUnitRenderersCheckBox.selected ? UnitRenderer : PictogramDefaultItemRenderer}"
+						   unitLineAlpha="{unitLineAlphaSlider.value}"
+						   unitLineColor="{unitLineColorCP.selectedColor}"
+						   unitLineThickness="{unitLineThicknessSlider.value}"
+						   unitMinSize.vertical="28" unitMinSize.grid="0"
+						   unitRoundRadius="{unitRoundRadiusSlider.value}"
+						   valueField="value"
+						   valueFilters="{[emissionSlider.minValue, emissionSlider.maxValue]}"
+						   valueLabelFunction="pictogramChart_valueLabelFunction"
+						   verticalGap="0"
+						   />
+	</s:Group>
+
+	<s:Rect width="100%" height="1">
+		<s:fill>
+			<s:SolidColor color="0xB3B3B3" />
+		</s:fill>
+	</s:Rect>
+
+
+	<s:Group width="100%" height="68">
+		<s:Rect left="0" right="0" top="0" bottom="0">
+			<s:fill>
+				<s:SolidColor color="0xF2F2F2" />
+			</s:fill>
+		</s:Rect>
+		<s:HGroup width="100%" height="100%" gap="20"
+				  contentBackgroundColor="0xF2F2F2"
+				  paddingLeft="20" paddingRight="20" verticalAlign="middle">
+			<s:ToggleButton id="playButton"
+							click="playButton_clickHandler(event)"
+							skinClass="fr.kapit.lab.demo.pictogram.skins.PlayPauseToggleButtonSkin"
+							/>
+			<common:HRangeSlider id="hSlider"
+								 width="100%" minWidth="721" minimum="1960" maximum="2007"
+								 value="2003" snapInterval="1" stepSize="1"
+								 tickNumber="48" bigTickInterval="10"
+								 dataTipFormatFunction="hSlider_dataTipFormatFunction"
+								 skinClass="fr.kapit.lab.demo.pictogram.skins.hslider.HSliderSkin"
+								 change="syncPictogramChart()"
+								 />
+		</s:HGroup>
+	</s:Group>
+
+</common:TemplateDemoContainer>

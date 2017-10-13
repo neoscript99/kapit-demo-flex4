@@ -1,0 +1,61 @@
+<graphml>
+	<node id="n1" label="Chief Technology Officer" type="people24" renderer="people"/>
+	<node id="n12" label="Departement">
+		<graph id="n1:" edgedefault="undirected">
+			<node id="n1::n1" label="Project Manager" type="people24" renderer="people"/>
+			<node id="n13" label="Unit1">
+			   <graph id="n1::n2">
+			        <node id="n1::n2::n1" label="Quality Assurance" color="#CEE3F0" type="people22" renderer="people"/>
+			       <node id="n1::n2::n2" label="Quality Tester" color="#CEE3F0" type="people23" renderer="people" />
+			       <node id="n1::n2::n3" label="Test Writer" color="#CEE3F0" type="people21" renderer="people" />
+		    	</graph>
+		    </node>
+		    <node id="n14" label="Unit2">
+			  <graph id="n1::n3">
+			    <node id="n1::n3::n1" label="System Analyst and Designer" color="#F3EFD0" type="people22"  renderer="people"/>
+			    <node id="n1::n3::n2" label="Team Lead" color="#E3E9D3" type="people23" renderer="people"/>
+			    <node id="n1::n3::n3" label="Sr.Software Engineer" color="#E3E9D3" type="people25" renderer="people" />
+			  </graph>
+		    </node>
+			<edge id="e1" source="n1" target="n12"/>
+			<edge id="e15" source="n1::n1" target="n13"/>
+			<edge id="e16" source="n1::n1" target="n14"/>
+			<edge id="e17" source="n1::n2::n1" target="n1::n2::n2"/>
+			<edge id="e18" source="n1::n2::n1" target="n1::n2::n3"/>
+			<edge id="e19" source="n1::n3::n1" target="n1::n3::n2"/>
+			<edge id="e20" source="n1::n3::n1" target="n1::n3::n3"/>
+		</graph>
+	</node>
+	<node id="n15" type="people21" renderer="people"/>
+	<edge id="21" source="n1" target="n15"/>
+	<node id="n16" type="people22" renderer="people"/>
+	<node id="n17" type="people22" renderer="people"/>
+	<edge id="22" source="n15" target="n16"/>
+	<edge id="23" source="n15" target="n17"/>
+	<node id="n18" type="people21" renderer="people"/>
+	<node id="n19" type="people23" renderer="people"/>
+	<edge id="24" source="n16" target="n18"/>
+	<edge id="25" source="n16" target="n19"/>
+	<node id="n20" type="people25" renderer="people"/>
+	<node id="n21" type="people23" renderer="people"/>
+	<edge id="26" source="n17" target="n20"/>
+	<edge id="27" source="n17" target="n21"/>
+	<node id="n22" type="people22" renderer="people"/>
+	<node id="n23" type="people22" renderer="people"/>
+	<node id="n24" label="Sub Unit">
+	   <graph id="n24:">
+			 <node id="n24::n1"  type="people22"  renderer="people"/>
+			 <node id="n24::n2"  renderer="people" type="people23"/>
+			  <node id="n24::n3"  type="people23" renderer="people" />
+			  <edge id="28" source="n24::n1" target="n24::n2"/>
+           	  <edge id="29" source="n24::n1" target="n24::n3"/>
+	   </graph>
+    </node>
+	<edge id="28" source="n18" target="n22"/>
+	<edge id="29" source="n18" target="n23"/>
+	<edge id="30" source="n18" target="n24::n1"/>
+	
+	
+	
+	
+ </graphml>

@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel implements="fr.kapit.lab.demo.ui.components.IConfigPanel"
+						 xmlns:component="fr.kapit.lab.demo.panel.component.*"
+						 xmlns:components="fr.kapit.lab.demo.common.components.*"
+						 xmlns:forms="fr.kapit.lab.demo.forms.*"
+						 xmlns:fx="http://ns.adobe.com/mxml/2009"
+						 xmlns:mx="library://ns.adobe.com/flex/mx"
+						 xmlns:s="library://ns.adobe.com/flex/spark"
+						 skinClass="fr.kapit.lab.demo.common.skins.OptionsLayoutPanelSkin"
+						 xmlns:buttons="fr.kapit.lab.demo.buttons.*"
+						 title="Layout: Hierarchical Cyclic"
+						 creationComplete="optionspanel1_creationCompleteHandler(event)"
+						 width="100%"
+						 >
+
+	<fx:Library>
+		<fx:Definition name="HSeparator">
+			<s:Group width="100%" height="1">
+				<s:Rect left="0" right="0" top="0" bottom="0">
+					<s:fill>
+						<s:SolidColor color="0xE6E6E6" />
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+		</fx:Definition>
+	</fx:Library>
+
+	<fx:Declarations>
+
+		<!-- true / false , labeled as "yes" / "no" -->
+		<s:ArrayCollection id="booleans">
+			<fx:Object label="Yes" value="{true}" hint="true" />
+			<fx:Object label="No" value="{false}" hint="false" />
+		</s:ArrayCollection>
+
+		<!-- default spacing values, used to modify the laoyout -->
+		<s:ArrayCollection id="defaultSpacings">
+			<fx:Object label="Low" value="{20}" hint="20" />
+			<fx:Object label="Medium" value="{60}" hint="60" />
+			<fx:Object label="High" value="{200}" hint="200" />
+		</s:ArrayCollection>
+
+		<!-- default angle values, used for circular and balloon layout -->
+		<s:ArrayCollection id="defaultAngles">
+			<fx:Object label="360" value="{360}" hint="360" />
+			<fx:Object label="180" value="{180}" hint="180" />
+		</s:ArrayCollection>
+
+		<s:ArrayCollection id="rootSelectionPolicies">
+			<fx:Object label="Directed"
+					   value="{RootSelectionType.DIRECTED_ROOT_SELECTION}"
+					   hint="RootSelectionType.DIRECTED_ROOT_SELECTION"
+					   />
+			<fx:Object label="Most closed"
+					   value="{RootSelectionType.MOST_CLOSED_ROOT_SELECTION}"
+					   hint="RootSelectionType.MOST_CLOSED_ROOT_SELECTION"
+					   />
+			<fx:Object label="Most surrounded"
+					   value="{RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION}"
+					   hint="RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION"
+					   />
+			<fx:Object label="Most weighted"
+					   value="{RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION}"
+					   hint="RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION"
+					   />
+		</s:ArrayCollection>
+
+		<s:ArrayCollection id="edgeDrawingTypes">
+			<fx:Object label="Straight" value="{EdgeDrawType.STRAIGHT_LINE}"
+					   hint="EdgeDrawType.STRAIGHT_LINE"
+					   />
+			<fx:Object label="Straight polyline" value="{EdgeDrawType.STRAIGHT_POLYLINE}"
+					   hint="EdgeDrawType.STRAIGHT_POLYLINE"
+					   />
+			<fx:Object label="Curved polyline" value="{EdgeDrawType.CURVED_POLYLINE}"
+					   hint="EdgeDrawType.CURVED_POLYLINE"
+					   />
+			<fx:Object label="Orthogonal polyline"
+					   value="{EdgeDrawType.ORTHOGONAL_STRAIGHT_POLYLINE}"
+					   hint="EdgeDrawType.ORTHOGONAL_STRAIGHT_POLYLINE"
+					   />
+			<fx:Object label="Orthogonal curved"
+					   value="{EdgeDrawType.ORTHOGONAL_CURVED_POLYLINE}"
+					   hint="EdgeDrawType.ORTHOGONAL_CURVED_POLYLINE"
+					   />
+		</s:ArrayCollection>
+		
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import flashx.textLayout.events.ModelChange;
+		
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.diagrammer.base.uicomponent.DiagramGroup;
+		import fr.kapit.diagrammer.base.uicomponent.container.DiagramTable;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.models.ILayoutModel;
+		import fr.kapit.lab.demo.popup.ErrorPopup;
+		import fr.kapit.layouts.algorithms.balloon.BalloonLayout;
+		import fr.kapit.layouts.algorithms.circular.SingleCycleCircularLayout;
+		import fr.kapit.layouts.algorithms.forcedirected.fade.ProgressiveFadeLayout;
+		import fr.kapit.layouts.algorithms.forcedirected.gem.StaticGEMLayout;
+		import fr.kapit.layouts.algorithms.hierarchical.HierarchicalLayout;
+		import fr.kapit.layouts.algorithms.orthogonal.OrthogonalLayout;
+		import fr.kapit.layouts.algorithms.radial.RadialLayout;
+		import fr.kapit.layouts.algorithms.sugiyama.SugiyamaLayout;
+		import fr.kapit.layouts.constants.EdgeDrawType;
+		import fr.kapit.layouts.constants.OrientationType;
+		import fr.kapit.layouts.constants.RootSelectionType;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		
+		import mx.core.IFlexDisplayObject;
+		import mx.events.FlexEvent;
+		import mx.managers.PopUpManager;
+		
+		import spark.events.IndexChangeEvent;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+		/**
+		 * @private
+		 * Instance of popup to display error on layouts
+		 */
+		private var _layoutErrorPopup:IFlexDisplayObject;
+
+		private var _lastSelectedLayout:int = 0;
+
+		private var _previousSelectedLayout:*;
+
+		[Bindable]
+		private var hasGroup:Boolean
+
+
+		/**
+		 * Reference to the current layoutModel; the layoutModel is a wrapper
+		 * around the visulizer.layout property
+		 */
+		public function get layoutModel():ILayoutModel
+		{
+			if (!appModel)
+			{
+				return null;
+			}
+			if (!appModel.visualizerModel)
+			{
+				return null;
+			}
+
+			return appModel.visualizerModel.layoutModel;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(value:ApplicationModel):void
+		{
+			_applicationModel = value;
+		}
+
+		public function layoutCommitComplete(event:VisualizerEvent):void
+		{
+		}
+
+		public function onElementCreated(event:VisualizerEvent):void
+		{
+			hasGroup=(appModel.visualizer.graph.metaNodes.length != 0);
+		}
+
+		[Bindable]
+		public var enableControls:Boolean = true;
+
+
+
+		protected function closeErrorPopupHandler(event:Event):void
+		{
+			PopUpManager.removePopUp(_layoutErrorPopup);
+		}
+
+
+		/**
+		 * Handles change of orientation on the Hierachical cyclic
+		 * (SugiyamaLayout).
+		 * Whenever the orientation changes, we need to enforce the values
+		 * for horizontal and vertical spacing
+		 *
+		 * @param event
+		 */
+		protected function sugiyamaOrientation_changeHandler(event:IndexChangeEvent):void
+		{
+			switch (sugiyamaOrientation.selectedIndex)
+			{
+				case 0:
+				{
+					layoutModel.orientation = uint(sugiyamaVertical.value);
+					switch (sugiyamaVerticalSpacing.selectedIndex)
+					{
+						case 0:
+							layoutModel.layerDistance=sugiyamaVerticalLow.value;
+							break;
+						case 1: 
+							layoutModel.layerDistance=sugiyamaVerticalMedium.value;
+							break;
+						case 2:
+							layoutModel.layerDistance=sugiyamaVerticalHigh.value;
+							break;
+					}
+					switch (sugiyamaHorizontalSpacing.selectedIndex)
+					{
+						case 0:
+							layoutModel.defaultNodeDistance=sugiyamaHorizontalLow.value;
+							break;
+						case 1: 
+							layoutModel.defaultNodeDistance=sugiyamaHorizontalMedium.value;
+							break;
+						case 2:
+							layoutModel.defaultNodeDistance=sugiyamaHorizontalHigh.value;
+							break;
+					}
+					break;
+				}
+					
+				case 1: 
+				{
+					layoutModel.orientation= uint(sugiyamaHorizontal.value);
+					switch (sugiyamaVerticalSpacing.selectedIndex)
+					{
+						case 0:
+							layoutModel.defaultNodeDistance=sugiyamaVerticalLow.value;
+							break;
+						case 1: 
+							layoutModel.defaultNodeDistance=sugiyamaVerticalMedium.value;
+							break;
+						case 2:
+							layoutModel.defaultNodeDistance=sugiyamaVerticalHigh.value;
+							break;
+					} 
+					switch (sugiyamaHorizontalSpacing.selectedIndex)
+					{
+						case 0:
+							layoutModel.layerDistance=sugiyamaHorizontalLow.value;
+							break;
+						case 1: 
+							layoutModel.layerDistance=sugiyamaHorizontalMedium.value;
+							break;
+						case 2:
+							layoutModel.layerDistance=sugiyamaHorizontalHigh.value;
+							break;
+					}
+					
+					break;
+				}
+					
+					
+			}
+			
+		}
+
+		/**
+		 * Handles change of vertical nodes spacing on the Hierarchical
+		 * cyclic (sugiyama layout).
+		 * If the layout <code>orientation</code> is vertical (top-down),
+		 * then the vertical spacing is the <code>layerDistance</code>
+		 * property.
+		 * If the layout orientation is horizontal (left-right), then the
+		 * vertical spacing is the <code>defaultNodeDistance</code>
+		 * property.
+		 *
+		 * @param event
+		 */
+		protected function sugiyamaVerticalSpacing_changeHandler(event:IndexChangeEvent):void
+		{
+			if (sugiyamaOrientation.selectedIndex==0)
+			{
+				switch (sugiyamaVerticalSpacing.selectedIndex)
+				{
+					case 0:
+						layoutModel.verticalDistance=sugiyamaVerticalLow.value;
+						break;
+					case 1: 
+						layoutModel.verticalDistance=sugiyamaVerticalMedium.value;
+						break;
+					case 2:
+						layoutModel.verticalDistance=sugiyamaVerticalHigh.value;
+						break;
+				}
+				
+			}
+			else
+			{
+				switch (sugiyamaVerticalSpacing.selectedIndex)
+				{
+					case 0:
+						layoutModel.horizontalDistance=sugiyamaVerticalLow.value;
+						break;
+					case 1: 
+						layoutModel.horizontalDistance=sugiyamaVerticalMedium.value;
+						break;
+					case 2:
+						layoutModel.horizontalDistance=sugiyamaVerticalHigh.value;
+						break;
+				}
+			}
+	
+		}
+
+		/**
+		 * Handles change of horizontal nodes spacing on the Hierarchical
+		 * cyclic  (sugiyama layout).
+		 * If the layout <code>orientation</code> is vertical (top-down),
+		 * then the horizontal spacing is the <code>defaultNodeDistance</code>
+		 * property.
+		 * If the layout orientation is horizontal (left-right), then the
+		 * horizontal spacing is the <code>layerDistance</code> property.
+		 *
+		 * @param event
+		 */
+		protected function sugiyamaHorizontalSpacing_changeHandler(event:IndexChangeEvent):void
+		{
+			if (sugiyamaOrientation.selectedIndex==1)
+			{
+				switch (sugiyamaHorizontalSpacing.selectedIndex)
+				{
+					case 0:
+						layoutModel.verticalDistance=sugiyamaHorizontalLow.value;
+						break;
+					case 1: 
+						layoutModel.verticalDistance=sugiyamaHorizontalMedium.value;
+						break;
+					case 2:
+						layoutModel.verticalDistance=sugiyamaHorizontalHigh.value;
+						break;
+				}
+				
+			}
+			else
+			{
+				switch (sugiyamaHorizontalSpacing.selectedIndex)
+				{
+					case 0:
+						layoutModel.horizontalDistance=sugiyamaHorizontalLow.value;
+						break;
+					case 1: 
+						layoutModel.horizontalDistance=sugiyamaHorizontalMedium.value;
+						break;
+					case 2:
+						layoutModel.horizontalDistance=sugiyamaHorizontalHigh.value;
+						break;
+				}
+				
+			}
+		}
+
+		/**
+		 * The graph layout is not saved in this demo
+		 * so we reset the layout buttons after we import
+		 * a graph
+		 **/
+		public function unselectLayout():void
+		{
+			enableControls = false;
+		}
+		
+
+		/* ***********************************
+		* line Type Handlers
+		***********************************/
+		protected function straight_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.edgeDrawing=EdgeDrawType.STRAIGHT_LINE;
+		}
+		
+		protected function straightPolyline_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.edgeDrawing=EdgeDrawType.STRAIGHT_POLYLINE;
+		}
+		
+		protected function curvedPolyline_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.edgeDrawing=EdgeDrawType.CURVED_POLYLINE;	
+		}
+		
+		protected function orthogonalPolyline_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.edgeDrawing=EdgeDrawType.ORTHOGONAL_STRAIGHT_POLYLINE;
+		}
+		
+		protected function orthogonalCurved_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.edgeDrawing=EdgeDrawType.ORTHOGONAL_CURVED_POLYLINE;
+		}
+			
+		
+		
+		/* ******************************
+		 * Root Selection Policy handlers
+		**********************************/
+		protected function directed_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.rootSelectionPolicy=RootSelectionType.DIRECTED_ROOT_SELECTION;
+		}
+		
+		protected function mostClosed_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.rootSelectionPolicy=RootSelectionType.MOST_CLOSED_ROOT_SELECTION;
+		}
+		
+		protected function mostWeighted_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.rootSelectionPolicy=RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION;
+		}
+		
+		protected function mostSurrounded_clickHandler(event:MouseEvent):void
+		{
+			layoutModel.rootSelectionPolicy=RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION;
+		}
+		
+		protected function optionspanel1_creationCompleteHandler(event:FlexEvent):void
+		{
+			this.header.height = 36
+			// TODO Auto-generated method stub
+			
+		}
+		
+	]]>
+	</fx:Script>
+
+
+
+	<s:VGroup  paddingLeft="10" paddingRight="10" width="100%" gap="14" paddingBottom="6" >
+		<s:Label paddingBottom="-8" paddingTop="0" text="Orientation"  />
+		<s:ButtonBar id="sugiyamaOrientation" labelField="label" requireSelection="true" change="sugiyamaOrientation_changeHandler(event)" horizontalCenter="0" width="100%" skinClass="fr.kapit.lab.demo.common.skins.buttonbars.CustomButtonBarSkin">
+			<s:dataProvider>
+				<s:ArrayCollection>
+					<fx:Object id="sugiyamaVertical" label="Vertical"
+							   value="{OrientationType.ORIENTATION_TOP_DOWN}"
+							   />
+					<fx:Object label="Horizontal"
+							   id="sugiyamaHorizontal"
+							   value="{OrientationType.ORIENTATION_LEFT_RIGHT}"
+							   />
+				</s:ArrayCollection>		   
+			</s:dataProvider>
+			<s:layout>
+				<s:HorizontalLayout gap="-1" columnWidth="101" variableColumnWidth="false" />
+			</s:layout>
+		</s:ButtonBar>
+		
+				
+		<s:Label paddingBottom="-8" text="Vertical Spacing"/>
+		<s:ButtonBar id="sugiyamaVerticalSpacing" labelField="label" selectedIndex="1" requireSelection="true" change="sugiyamaVerticalSpacing_changeHandler(event)" horizontalCenter="0" width="100%" skinClass="fr.kapit.lab.demo.common.skins.buttonbars.CustomButtonBarSkin">
+			<s:dataProvider>
+				<s:ArrayCollection>
+					<fx:Object id="sugiyamaVerticalLow" label="Low"
+							   value="{20}"/>
+					<fx:Object  id="sugiyamaVerticalMedium"
+								label="Medium"
+								value="{60}"/>
+					<fx:Object  id="sugiyamaVerticalHigh"
+								label="High"
+								value="{200}"/>
+				</s:ArrayCollection>		   
+			</s:dataProvider>
+			<s:layout>
+				<s:HorizontalLayout gap="-2" columnWidth="67.5" variableColumnWidth="false"/>
+			</s:layout>
+		</s:ButtonBar>
+		<s:Label paddingBottom="-8" text="Horizontal Spacing"/>
+		<s:ButtonBar id="sugiyamaHorizontalSpacing" labelField="label" requireSelection="true" change="sugiyamaHorizontalSpacing_changeHandler(event)" horizontalCenter="0" width="100%" skinClass="fr.kapit.lab.demo.common.skins.buttonbars.CustomButtonBarSkin" selectedIndex="2">
+			<s:dataProvider>
+				<s:ArrayCollection>
+					<fx:Object id="sugiyamaHorizontalLow" label="Low"
+							   value="{20}"/>
+					<fx:Object  id="sugiyamaHorizontalMedium"
+								label="Medium"
+								value="{60}"/>
+					<fx:Object  id="sugiyamaHorizontalHigh"
+								label="High"
+								value="{200}"/>
+				</s:ArrayCollection>		   
+			</s:dataProvider>
+			<s:layout>
+				<s:HorizontalLayout gap="-2" columnWidth="67.5" variableColumnWidth="false"/>
+			</s:layout>
+		</s:ButtonBar>
+		<s:VGroup width="100%" paddingLeft="-10" gap="0" >
+			<fx:HSeparator />
+			<s:Group width="100%" height="1">
+				<s:Rect top="0" bottom="0" left="0" right="0">
+					<s:fill>
+						<s:SolidColor color="0xFFFFFF"/>
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+		</s:VGroup>
+		<s:Label paddingBottom="-8"  text="Line style" />
+		<s:VGroup gap="6">
+			<s:RadioButton groupName="hierarchicalCyclicLineType" 
+						   id="sugiyamaStraight"
+						   label="Straight" 
+						   width="150"
+						   click="straight_clickHandler(event)"/>
+			<s:RadioButton groupName="hierarchicalCyclicLineType" 
+						   id="sugiyamaStraightPolyline"
+						   label="Straight Polyline" 
+						   width="150"
+						   click="straightPolyline_clickHandler(event)"/>
+			<s:RadioButton groupName="hierarchicalCyclicLineType" 
+						   id="sugiyamaCurvedPolyline"
+						   label="Curved Polyline" 
+						   width="150"
+						   click="curvedPolyline_clickHandler(event)"/>    
+			<s:RadioButton groupName="hierarchicalCyclicLineType" 
+						   id="sugiyamaOrthogonalPolyline"
+						   label="Orthogonal Polyline" 
+						   width="150"
+						   click="orthogonalPolyline_clickHandler(event)"/>    
+			<s:RadioButton groupName="hierarchicalCyclicLineType" 
+						   id="sugiyamaOrthogonalCurved"
+						   label="Orthogonal Curved" 
+						   selected="true"
+						   width="150" click="orthogonalCurved_clickHandler(event)"/>    
+		</s:VGroup>
+	
+	</s:VGroup>
+
+
+
+		
+</components:OptionsPanel>

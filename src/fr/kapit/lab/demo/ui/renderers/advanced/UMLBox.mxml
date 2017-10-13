@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:renderers="fr.kapit.lab.demo.ui.renderers.*"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 >
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="editing" />
+	</s:states>
+
+	<fx:Script>
+	<![CDATA[
+		import spark.events.TextOperationEvent;
+
+		[Bindable]
+		public var text:String
+
+		protected var  _labelText:String;
+
+		public function get labelText():String
+		{
+			return _labelText;
+		}
+		public function set labelText(value:String):void
+		{
+			_labelText = value;
+			label.text=value;
+		}
+
+		
+		public function get effectiveHeight():Number
+		{
+			return attributesTextArea.scroller ? attributesTextArea.scroller.viewport.contentHeight + attributesTextArea.top + attributesTextArea.bottom : height;
+		}
+		
+		protected function attributesTextArea_changeHandler(event:TextOperationEvent):void
+		{
+			text = attributesTextArea.text;
+			dispatchEvent( new Event("change"));
+		}
+	]]>
+	</fx:Script>
+
+	<s:Rect height="28" left="0" right="0">
+		<s:fill>
+			<s:LinearGradient rotation="-90">
+				<s:GradientEntry color="#C9C9C9" />
+				<s:GradientEntry color="#DBDBDB" />
+			</s:LinearGradient>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="#808080" />
+		</s:stroke>
+	</s:Rect>
+
+	<s:Label id="label"
+			 height="28"
+			 left="10" top="8"
+			 fontSize="12" verticalCenter="middle"
+			 />
+	<s:TextArea id="attributesTextArea"
+				skinClass="fr.kapit.lab.demo.forms.skin.TextAreaSkinNoBackground"
+				skinClass.editing="spark.skins.spark.TextAreaSkin"
+				left="3" right="3" top="31" bottom="3"
+				text="{text}"
+				borderVisible.normal="false" editable.editing="true"
+				editable.normal="false"
+				verticalScrollPolicy.normal="off" verticalScrollPolicy.editing="off"
+				change="attributesTextArea_changeHandler(event)"
+				/>
+
+</s:Group>

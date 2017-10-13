@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components:OptionsPanel implements="fr.kapit.lab.demo.ui.components.IConfigPanel"
+						 xmlns:component="fr.kapit.lab.demo.panel.component.*"
+						 xmlns:components="fr.kapit.lab.demo.common.components.*"
+						 xmlns:fx="http://ns.adobe.com/mxml/2009"
+						 xmlns:mx="library://ns.adobe.com/flex/mx"
+						 xmlns:node="fr.kapit.lab.demo.ui.components.properties.node.*"
+						 xmlns:s="library://ns.adobe.com/flex/spark"
+						 width="100%"
+						 labelProperty="{settingSelector.selectedItem.label}"
+						 title="Properties"
+						 >
+	<fx:Declarations>
+		<s:ArrayCollection id="settingList">
+			<component:PropertySelectorHeaderButton 
+													icon="{EmbeddedAssets.IMG_PROPERTY_SHAPE}"
+													label="Shape"
+													propertyType="shape"
+													state="shapeSettings"
+													/>
+			<component:PropertySelectorHeaderButton 
+													icon="{EmbeddedAssets.IMG_PROPERTY_STROKE}"
+													label="Stroke"
+													propertyType="stroke"
+													state="strokeSettings"
+													/>
+			<component:PropertySelectorHeaderButton 
+													icon="{EmbeddedAssets.IMG_PROPERTY_FONT}"
+													label="Text"
+													propertyType="text"
+													state="textSettings"
+													/>
+		</s:ArrayCollection>
+	</fx:Declarations>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.ui.components.IConfigPanel;
+
+		import spark.events.IndexChangeEvent;
+
+		/**
+		 * @private
+		 * Reference to the application model.
+		 */
+		private var _applicationModel:ApplicationModel = null;
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			shapeSettings.synchronize();
+			strokeSettings.synchronize();
+			textSettings.synchronize();
+		}
+
+		/**
+		 * @private
+		 * Handles the click on header buttons, change the settings form.
+		 *
+		 * @param event
+		 */
+		protected function settingSelector_changeHandler(event:IndexChangeEvent):void
+		{
+			currentState = PropertySelectorHeaderButton(settingSelector.selectedItem).state;
+		}
+
+		/**
+		 * Reference to the current application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			_applicationModel = objValue;
+		}
+	]]>
+	</fx:Script>
+
+	<components:states>
+		<s:State name="shapeSettings" />
+		<s:State name="strokeSettings" />
+		<s:State name="textSettings" />
+	</components:states>
+
+	<s:Group width="100%">
+		<component:KapHeaderPanelButtonBar id="settingSelector"
+										   dataProvider="{settingList}"
+										   numRows="1" requireSelection="true"
+										   change="settingSelector_changeHandler(event)"
+										   />
+	</s:Group>
+	<s:VGroup>
+
+		<!-- Shape : background properties -->
+		<node:ShapeSettings id="shapeSettings"
+							includeIn="shapeSettings"
+							width="100%"
+							appModel="{appModel}" gap="10" itemCreationPolicy="immediate"
+							/>
+		<!-- Stroke : border properties -->
+		<node:StrokeSettings id="strokeSettings"
+							 includeIn="strokeSettings"
+							 width="100%"
+							 appModel="{appModel}" gap="10" itemCreationPolicy="immediate"
+							 />
+		<!-- Text : font and data properties -->
+		<node:TextSettings id="textSettings"
+						   includeIn="textSettings"
+						   width="100%"
+						   appModel="{appModel}" gap="10" itemCreationPolicy="immediate"
+						   />
+
+	</s:VGroup>
+
+</components:OptionsPanel>

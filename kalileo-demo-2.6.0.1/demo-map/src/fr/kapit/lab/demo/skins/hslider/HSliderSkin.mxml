@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009"
+			 xmlns:s="library://ns.adobe.com/flex/spark"
+			 minHeight="11" alpha.disabled="0.5">
+
+    <fx:Metadata>[HostComponent("fr.kapit.lab.demo.common.components.HRangeSlider")]</fx:Metadata> 
+    
+    <s:states>
+        <s:State name="normal" />
+        <s:State name="disabled" />
+    </s:states>
+    
+    <fx:Declarations>
+        <fx:Component id="dataTip">     
+           <s:DataRenderer minHeight="33" minWidth="42" y="-34">  
+			   <s:Group alpha="0.75" x="0" y="0">
+				   <s:Path data="M 21 32.124 C 20.445 32.124 19.919 31.848 19.517 31.345 L 15.265 26.28 C 14.131 24.861 11.818 24 10 24 L 3 24 C 1.621 24 0 22.379 0 21 L 0 2 C 0 0.621 1.621 0 3 0 L 39 0 C 40.379 0 41 0.621 41 2 L 41 21 C 41 22.379 40.379 24 39 24 L 32 24 C 30.182 24 27.869 24.861 26.735 26.28 L 22.483 31.47 C 22.082 31.973 21.555 32.124 21 32.124 Z" winding="nonZero" x="0" y="1">
+					   <s:fill>
+						   <s:LinearGradient rotation="270" scaleX="32.124" x="20.5" y="32.124">
+							   <s:GradientEntry color="#0A0A0A" ratio="0.398773"/>
+							   <s:GradientEntry color="#262626" ratio="1"/>
+						   </s:LinearGradient>
+					   </s:fill>
+				   </s:Path>
+				   <s:Path data="M 39 1 C 40.103 1 41 1.897 41 3 L 41 22 C 41 23.103 40.103 24 39 24 L 32 24 C 30.047 24 27.564 25.194 26.345 26.718 L 22.093 32.033 C 21.788 32.414 21.4 32.624 21 32.624 C 20.6 32.624 20.212 32.414 19.907 32.032 L 15.655 26.719 C 14.437 25.194 11.953 24 10 24 L 3 24 C 1.897 24 1 23.103 1 22 L 1 3 C 1 1.897 1.897 1 3 1 L 39 1 M 39 0 L 3 0 C 1.35 0 0 1.35 0 3 L 0 22 C 0 23.65 1.35 25 3 25 L 10 25 C 11.65 25 13.844 26.054 14.874 27.343 L 19.127 32.657 C 19.642 33.302 20.32 33.624 21 33.624 C 21.68 33.624 22.358 33.302 22.874 32.657 L 27.127 27.343 C 28.156 26.054 30.35 25 32 25 L 39 25 C 40.65 25 42 23.65 42 22 L 42 3 C 42 1.35 40.65 0 39 0 L 39 0 Z" winding="nonZero" x="0" y="0">
+					   <s:fill>
+						   <s:SolidColor/>
+					   </s:fill>
+				   </s:Path>
+			   </s:Group>
+               <s:Label id="labelDisplay" text="{data}"
+                         horizontalCenter="0" verticalCenter="-5"
+                         left="5" right="5" top="5" bottom="5"
+                         textAlign="center" verticalAlign="middle"
+                         fontWeight="bold" color="white" fontSize="14">
+					<s:filters>
+						<s:DropShadowFilter alpha="0.6" distance="1" angle="-90" />
+					</s:filters>
+               </s:Label>
+            </s:DataRenderer>
+       </fx:Component>
+		<fx:Component id="bigTickLabel">
+			<s:Label color="0x333333" textAlign="center"
+					 top="30"
+					 />
+		</fx:Component>
+    </fx:Declarations>
+    
+    <s:Button id="track" left="0" right="0" top="13" height="3" minWidth="33"
+              tabEnabled="false"
+              skinClass="fr.kapit.lab.demo.skins.hslider.HSliderTrackSkin"
+			  />
+	
+	<s:Graphic id="trackTicks" left="0" right="0" top="20" height="25" mouseEnabled="false"
+			   />
+	
+    <s:Button id="thumb" top="0" width="32" height="32" 
+              tabEnabled="false"
+              skinClass="fr.kapit.lab.demo.skins.hslider.HSliderThumbSkin"
+			  />
+	
+	<s:Label id="minLabel"
+			 color="0x333333" textAlign="center"
+			 top="30"
+			 />
+	
+	<s:Label id="maxLabel"
+			 color="0x333333" textAlign="center"
+			 top="30"
+			 />
+	
+</s:SparkSkin>

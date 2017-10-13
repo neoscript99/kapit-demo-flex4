@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 implements="fr.kapit.radarchart.IRadarChartToolTip"
+		 mouseChildren="false" mouseEnabled="false"
+		 minWidth="80" minHeight="40">
+	
+	<fx:Script>
+	<![CDATA[
+		import mx.formatters.NumberBase;
+
+		[Bindable] private var _color:uint;
+		[Bindable] private var _label:String;
+		[Bindable] private var _axisLabel:String;
+		[Bindable] private var _value:String;
+		
+		private var _seriesPoint:Point;
+		private var _radarChartCenter:Point;
+		
+		private var _dataFormatter:NumberBase = new NumberBase(".", " ", ".", " ");
+		
+		/**
+		 * Indicates the series label.
+		 */
+		public function set label(value:String):void
+		{
+			_label = value;
+		}
+
+		/**
+		 * Indicates the axis label.
+		 */
+		public function set axisLabel(value:String):void
+		{
+			_axisLabel = value;
+		}
+		
+		/**
+		 * Indicates that will be displayed in the tooltip.
+		 */
+		public function set value(v:Number):void
+		{
+			_value = _dataFormatter.formatThousands(v.toString());
+			invalidateDisplayList();
+		}
+		
+		/**
+		 * Indicates the coordinates (in the stage coordinates system) of the center of the radarchart.
+		 */
+		public function set radarChartCenter(value:Point):void
+		{
+			_radarChartCenter = value;
+			invalidateDisplayList();
+		}
+		
+		/**
+		 * Indicates the coordiantes (in the stage coordinates system) of point for which the tooltip is beeing displayed.
+		 */
+		public function set seriesPoint(value:Point):void
+		{
+			_seriesPoint = value;
+			invalidateDisplayList();
+		}
+		
+		/**
+		 * Indicates the series color.
+		 */
+		public function set color(value:uint):void
+		{
+			_color = value;
+			invalidateDisplayList();
+		}
+		
+		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+		{
+			super.updateDisplayList(unscaledWidth, unscaledHeight);
+			
+			if (_seriesPoint && content)
+			{
+				content.x = _seriesPoint.x - (content.width / 2);
+				content.y = _seriesPoint.y - content.height - 2;
+			}
+		}
+		
+		public function get text():String {
+			return null;
+		}
+
+		public function set text(value:String):void {
+			return;
+		}
+		
+		public function set controlPoints(value:Array):void
+		{
+			// TODO Auto Generated method stub
+			
+		}
+		
+	]]>
+	</fx:Script>
+	
+	<s:Group id="content">
+		<s:Path data="M 77 34 C 76 34 76 34 76 34 L 73 32 C 72 31 70 31 69 31 L 2 31 C 1 31 0 30 0 30 L 0 1 C 0 0 1 0 2 0 L 152 0 C 153 0 153 0 153 1 L 153 30 C 153 30 153 31 152 31 L 85 31 C 84 31 82 31 81 32 L 78 34 C 78 34 78 34 77 34 Z" winding="nonZero" left="0" right="0" top="1" bottom="0">
+			<s:fill>
+				<s:LinearGradient rotation="90">
+					<s:GradientEntry color="0x787878" ratio="0.0" />
+					<s:GradientEntry color="0x666666" ratio="0.6" />
+				</s:LinearGradient>
+			</s:fill>
+		</s:Path>
+		<s:Path data="M 152 1 C 153 1 153 1 153 2 L 153 31 C 153 31 153 32 152 32 L 85 32 C 84 32 82 32 81 33 L 78 34 C 78 34 77 34 77 34 C 77 34 76 34 76 34 L 73 33 C 72 32 70 32 69 32 L 2 32 C 1 32 1 31 1 31 L 1 2 C 1 1 1 1 2 1 L 152 1 M 152 0 L 2 0 C 1 0 0 1 0 2 L 0 31 C 0 32 1 33 2 33 L 69 33 C 70 33 72 33 73 34 L 75 35 C 76 35 76 35 77 35 C 78 35 78 35 79 35 L 81 34 C 82 33 84 33 85 33 L 152 33 C 153 33 154 32 154 31 L 154 2 C 154 1 153 0 152 0 L 152 0 Z" winding="nonZero" left="0" right="0" top="0" bottom="0">
+			<s:fill>
+				<s:SolidColor color="0x404040"/>
+			</s:fill>
+		</s:Path>
+		<s:Rect alpha="0.2" height="2" left="1" right="1" top="0">
+			<s:fill>
+				<s:SolidColor color="0xFFFFFF"/>
+			</s:fill>
+		</s:Rect>
+		<s:RichText color="0xFFFFFF" fontFamily="Calibri" fontSize="12" verticalCenter="0"
+				 	paddingLeft="10" paddingRight="10" paddingTop="10" paddingBottom="10">
+			<s:content>
+				<s:p><s:span fontWeight="bold" text="{_axisLabel}" /> <s:span text="{'('+_value+')'}" /></s:p>
+				<s:p><s:span text="{_label}" /></s:p>
+			</s:content>
+			<s:filters>
+				<s:DropShadowFilter color="0x000000" distance="1" alpha=".6" blurX="0" blurY="0" angle="-90" />
+			</s:filters>
+		</s:RichText>
+	</s:Group>
+	
+</s:Group>

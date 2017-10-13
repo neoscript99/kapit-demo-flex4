@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:buttons="fr.kapit.lab.demo.buttons.*"
+		 xmlns:components="fr.kapit.lab.demo.menubar.components.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 addedToStage="hgroup1_addedToStageHandler(event)"
+		 >
+
+	<fx:Library>
+		<fx:Definition name="SeparatorLine">
+			<s:Group width="2" height="30">
+				<s:Rect width="0" height="30" left="1">
+					<s:fill>
+						<s:SolidColor color="0xCCCCCC" />
+					</s:fill>
+				</s:Rect>
+			</s:Group>
+		</fx:Definition>
+	</fx:Library>
+
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.datavisualization.assets.EmbeddedAssets;
+		import fr.kapit.diagrammer.Diagrammer;
+		import fr.kapit.lab.demo.data.GrapheConstructor;
+		import fr.kapit.lab.demo.menubar.events.ToolBarEvent;
+		import fr.kapit.lab.demo.model.DiagrammerModel;
+		import fr.kapit.lab.demo.models.constants.DefaultLinkConstant;
+		import fr.kapit.visualizer.actions.ZoomAction;
+		import fr.kapit.visualizer.actions.data.ZoomActionData;
+		import fr.kapit.visualizer.base.IGroup;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+		import fr.kapit.visualizer.renderers.IGroupRenderer;
+		import fr.kapit.visualizer.renderers.ITableRenderer;
+
+		[Bindable]
+		public var model:DiagrammerModel;
+
+		[Bindable]
+		private var _hasNodesSelected:Boolean;
+
+		[Bindable]
+		private var _hasGroupsSelected:Boolean;
+
+		private var _newCreatedNode:ISprite;
+
+		private var _cursorAction:Class;
+
+		private var _zoomStateActivated:Boolean;
+
+		protected function hgroup1_addedToStageHandler(event:Event):void
+		{
+			init();
+			setSelectionState();
+		}
+
+		protected function init():void
+		{
+			_cursorAction = null;
+			_zoomStateActivated = false;
+			model.visualizer.updateAction(ZoomAction.ID, new ZoomActionData);
+			cursorManager.removeAllCursors();
+
+			model.unregisterAllListeners();
+			model.enableLinkMode = false;
+			model.enableMultiSelection = false;
+			model.enablePan = false;
+			model.enableSelectAndResizeNodes(false);
+			model.unselectAll();
+		}
+
+		/**
+		 * Method invoked to update the panel according to state of
+		 * the data visualization component (selection, style...).
+		 */
+		public function synchronize():void
+		{
+			_hasGroupsSelected = model.isGroupSelection(true);
+			_hasNodesSelected = model.isNodeSelection(true) && 1 < model.selectedNodes.length;
+		}
+
+		protected function setSelectionState():void
+		{
+			model.enableSelectAndResizeNodes(true);
+			model.enableMultiSelection = true;
+		}
+
+		protected function setPanState():void
+		{
+			model.enablePan = true;
+		}
+
+		protected function setZoomState(isOutState:Boolean):void
+		{
+			_cursorAction = isOutState ? EmbeddedAssets.IMG_ZOOM_OUT : EmbeddedAssets.IMG_ZOOM_IN;
+			_zoomStateActivated = true;
+			model.enableZoom(true, isOutState);
+		}
+
+		protected function setCreateLinkState():void
+		{
+			model.enableLinkMode = true;
+			model.defaultLinkStyle = String(toolBar.selectedItem.selectedTool.data);
+			model.registerListener(KeyboardEvent.KEY_UP, linkmodeKeyUpHandler);
+			model.diagrammer.setFocus();
+		}
+
+		protected function linkmodeKeyUpHandler(event:KeyboardEvent):void
+		{
+			model.isLogEnabled = false;
+			if (event.keyCode == Keyboard.ESCAPE)
+			{
+				init();
+				callLater(setCreateLinkState);
+			}
+			model.isLogEnabled = true;
+		}
+
+		protected function setCreateShapeState():void
+		{
+			model.registerListener(MouseEvent.CLICK, addShapeHandler);
+			_cursorAction = toolBar.selectedItem.selectedTool.icon;
+		}
+
+		protected function addShapeHandler(event:MouseEvent):void
+		{
+			var container:IGroup=null;
+			var addNode:Boolean=false;
+			if (event.target is IGroup)
+			{
+				container = event.target as IGroup;
+				addNode=true;
+			}
+			else if (event.target is IGroupRenderer || event.target is ITableRenderer)
+			{
+				container = event.target.item as IGroup;
+				addNode=true;
+			}
+			else if (event.target is Diagrammer)
+			{
+				addNode=true;
+			}
+			if (addNode)
+			{
+				var shape:String = String(toolBar.selectedItem.selectedTool.data);
+				var size:int = 50;
+				_newCreatedNode = model.addNode("label", shape, new Point(model.diagrammer.mouseX-(container?container.x:0), model.diagrammer.mouseY-(container?container.y:0)), size,container);
+				model.unselectAll();
+				//_newCreatedNode.isSelected = true;
+				model.diagrammer.dispatchVisualizerEvent(VisualizerEvent.ELEMENTS_SELECTION_CHANGED, model.diagrammer.selection);
+			}
+		}
+
+		protected function btundo_clickHandler(event:MouseEvent):void
+		{
+			undoRedo(true);
+		}
+
+
+		protected function btredo_clickHandler(event:MouseEvent):void
+		{
+			undoRedo(false);
+		}
+
+		protected function undoRedo(isUndo:Boolean):void
+		{
+			isUndo ? model.undo() : model.redo();
+			model.history.checkUndoRedoTasks(null);
+			model.diagrammer.unselectAll();
+		}
+
+		protected function toolBar_selectionChangedHandler(event:ToolBarEvent):void
+		{
+			init();
+
+			switch (event.toolBar.selectedIndex)
+			{
+				case 0:
+				{
+					setSelectionState();
+					break;
+				}
+
+				case 1:
+				{
+					setPanState();
+					break;
+				}
+				case 2:
+				{
+					setCreateLinkState();
+					break;
+				}
+				case 3:
+				case 4:
+				case 5:
+				{
+					setCreateShapeState();
+					break;
+				}
+				case 6:
+				{
+					setZoomState(true);
+					break;
+				}
+				case 7:
+				{
+					setZoomState(false);
+					break;
+				}
+			}
+		}
+
+		protected function btgroup_clickHandler(event:MouseEvent):void
+		{
+			model.createGroup();
+		}
+
+		protected function btungroup_clickHandler(event:MouseEvent):void
+		{
+			model.destroyGroups();
+		}
+
+		public function get cursorAction():Class
+		{
+			return _cursorAction;
+		}
+
+		public function get zoomStateActivated():Boolean
+		{
+			return _zoomStateActivated;
+		}
+
+
+
+		protected function button1_clickHandler(event:MouseEvent):void
+		{
+			GrapheConstructor.construct(model.diagrammer);
+		}
+	]]>
+	</fx:Script>
+
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0xB3B3B3" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xF2F2F2" />
+		</s:fill>
+	</s:Rect>
+
+	<s:HGroup height="100%" left="10" verticalAlign="middle" gap="10">
+		<components:ToolBar id="toolBar"
+							selectionChanged="toolBar_selectionChangedHandler(event)"
+							>
+			<components:ToolBarItem id="toolSelection"
+									skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemVerticalSkin"
+									>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CURSOR}"
+										label="Selection"
+										/>
+			</components:ToolBarItem>
+			<components:ToolBarItem skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemVerticalSkin"
+									>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_HAND}"
+										label="Pan"
+										/>
+			</components:ToolBarItem>
+			<components:ToolBarItemDropDown id="toolLink"
+											skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemDropDownSkin"
+											>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_SIMPLE_ARROW}"
+										data="{DefaultLinkConstant.SIMPLE_ARROW}"
+										label="Simple Arrow"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_DOUBLE_ARROW}"
+										data="{DefaultLinkConstant.DOUBLE_ARROW}"
+										label="Double Arrow"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_SIMPLE_LINK}"
+										data="{DefaultLinkConstant.SIMPLE_LINK}"
+										label="Simple Link"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_DASHED_LINK}"
+										data="{DefaultLinkConstant.DASHED_LINK}"
+										label="Dashed Link"
+										/>
+			</components:ToolBarItemDropDown>
+			<components:ToolBarItemDropDown id="shapeLosange"
+											skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemDropDownSkin"
+											>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE_0}"
+										data="losange_0"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE_1}"
+										data="losange_1"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE_2}"
+										data="losange_2"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE_3}"
+										data="losange_3"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE_4}"
+										data="losange_4"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE_5}"
+										data="losange_5"
+										/>
+			</components:ToolBarItemDropDown>
+			<components:ToolBarItemDropDown id="shapeCircle"
+											skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemDropDownSkin"
+											>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE_0}"
+										data="circle_0"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE_1}"
+										data="circle_1"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE_2}"
+										data="circle_2"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE_3}"
+										data="circle_3"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE_4}"
+										data="circle_4"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE_5}"
+										data="circle_5"
+										/>
+			</components:ToolBarItemDropDown>
+			<components:ToolBarItemDropDown id="shapeWithText"
+											skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemDropDownSkin"
+											columns="4"
+											>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_BOX}"
+										data="rectangle" label="Box"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_ROUNDEDBOX}"
+										data="rectrounded" label="Rounded Box"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_LOSANGE}"
+										data="losange" label="Losange"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_CIRCLE}"
+										data="circle" label="Circle"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_POLY6}"
+										data="hexagon" label="Hexagon"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_POLY8}"
+										data="octagon" label="Octagon"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_TRAPEZE}"
+										data="trapeze" label="Trapeze"
+										/>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_MENUBAR_DOCUMENT}"
+										data="document" label="Document"
+										/>
+			</components:ToolBarItemDropDown>
+			<components:ToolBarItem skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemVerticalSkin"
+									>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_ZOOM_OUT}"
+										label="Zoom Out"
+										/>
+			</components:ToolBarItem>
+			<components:ToolBarItem skinClass="fr.kapit.lab.demo.menubar.skins.ToolBarItemVerticalSkin"
+									>
+				<components:ToolBarTool icon="{EmbeddedAssets.IMG_ZOOM_IN}"
+										label="Zoom In"
+										/>
+			</components:ToolBarItem>
+		</components:ToolBar>
+
+		<fx:SeparatorLine />
+
+		<s:HGroup height="30" verticalAlign="middle" gap="3">
+			<buttons:IconButton width="30" height="100%"
+								enabled="{model.history.canUndo}"
+								iconActive="{EmbeddedAssets.IMG_MENUBAR_UNDO}"
+								iconInactive="{EmbeddedAssets.IMG_MENUBAR_UNDO_DISABLED}"
+								click="btundo_clickHandler(event)"
+								/>
+			<buttons:IconButton width="30" height="100%"
+								enabled="{model.history.canRedo}"
+								iconActive="{EmbeddedAssets.IMG_MENUBAR_REDO}"
+								iconInactive="{EmbeddedAssets.IMG_MENUBAR_REDO_DISABLED}"
+								click="btredo_clickHandler(event)"
+								/>
+		</s:HGroup>
+
+		<fx:SeparatorLine />
+
+		<s:HGroup height="30" verticalAlign="middle" gap="3">
+			<buttons:IconButton width="30" height="100%"
+								enabled="{_hasNodesSelected}"
+								iconActive="{EmbeddedAssets.IMG_MENUBAR_GROUP}"
+								iconInactive="{EmbeddedAssets.IMG_MENUBAR_GROUP_DISABLED}"
+								click="btgroup_clickHandler(event)"
+								/>
+			<buttons:IconButton width="30" height="100%"
+								enabled="{_hasGroupsSelected}"
+								iconActive="{EmbeddedAssets.IMG_MENUBAR_UNGROUP}"
+								iconInactive="{EmbeddedAssets.IMG_MENUBAR_UNGROUP_DISABLED}"
+								click="btungroup_clickHandler(event)"
+								/>
+		</s:HGroup>
+		<fx:SeparatorLine />
+		<buttons:Button height="30"
+						label="New graph"
+						click="button1_clickHandler(event)"
+						/>
+
+		<!--<fx:SeparatorLine />
+
+		<s:HGroup verticalAlign="middle" gap="3" height="30">
+			<buttons:Button id="importBtn" label="Import" height="100%"
+							click="importBtn_clickHandler(event)"/>
+			<buttons:Button id="exportBtn" label="Export"  height="100%"
+							click="exportBtn_clickHandler(event)"/>
+		</s:HGroup>-->
+	</s:HGroup>
+</s:Group>

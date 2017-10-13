@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		alpha.disabled=".5" minHeight="90" minWidth="0" width="100%"
+		>
+
+	<!-- host component -->
+	<fx:Metadata>[HostComponent("fr.kapit.pictogram.base.PictogramCell")]</fx:Metadata>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="selected" />
+		<s:State name="disabled" />
+	</s:states>
+
+	<!-- mxml content -->
+	<s:HGroup gap="40" left="40" right="40" verticalCenter="0" verticalAlign="middle">
+		<s:VGroup gap="2" horizontalAlign="center" width="60">
+			<s:BitmapImage id="symbolArea" maxHeight="40" scaleMode="letterbox" />
+			<s:Label id="metaDataLabel" color="0x4D4D4D"
+					 fontFamily="Calibri" fontSize="14" fontWeight="bold"
+					 />
+			
+		</s:VGroup>
+		<s:VGroup gap="2" horizontalAlign="right" paddingTop="15" minWidth="55">
+				<s:Label id="valueLabel" color="0x4D4D4D"
+						 fontFamily="Calibri" fontSize="30" fontWeight="bold"
+						 />
+				<s:Label color="0x808080" text="mT/capita"
+						 fontFamily="Calibri" fontSize="12" fontStyle="italic"
+					 	 />
+		</s:VGroup>
+		<s:HGroup id="unitsGrid" width="100%" height="20" requestedColumnCount="24" gap="10" verticalCenter="0" />
+	</s:HGroup>
+	
+	<s:Rect width="100%" height="1" left="40" right="40" bottom="0">
+		<s:fill>
+			<s:SolidColor color="0xCCCCCC" />
+		</s:fill>
+	</s:Rect>
+	
+</s:Skin>

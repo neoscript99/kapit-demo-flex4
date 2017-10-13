@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application preloader="fr.kapit.lab.demo.preloader.GenericPreloader"
+			   xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:managers="fr.kapit.lab.demo.managers.*"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:views="fr.kapit.lab.demo.ui.views.*"
+			   minHeight="246" minWidth="663"
+			   >
+
+	<fx:Style source="fr/kapit/lab/demo/styles/skins.css" />
+	<fx:Style source="fr/kapit/lab/demo/common/assets/styles/style.css" />
+	<fx:Style source="fr/kapit/lab/demo/common/assets/styles/skins.css" />
+
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace model "fr.kapit.lab.demo.model.*";
+		@namespace views "fr.kapit.lab.demo.ui.views.*";
+		@namespace components "fr.kapit.lab.demo.common.components.*";
+		
+		components|OptionsPanel
+		{
+			skinClass: ClassReference("fr.kapit.lab.demo.common.skins.KalileoOptionsPanelSkin")
+		}
+	</fx:Style>
+
+	<fx:Declarations>
+	</fx:Declarations>
+
+
+	<views:MainView width="100%" height="100%" />
+
+</s:Application>

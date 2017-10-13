@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tilemap:TilemapComponent xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  xmlns:tilemap="com.mapquest.tilemap.*"
+						  implements="fr.kapit.lab.demo.ui.components.map.IMapLayer"
+						  key="Fmjtd%7Cluua206b25%2Cra%3Do5-967ld0">
+	<fx:Script>
+		<![CDATA[
+			import com.mapquest.LatLng;
+			import com.mapquest.tilemap.RectLL;
+			import com.mapquest.tilemap.TileMapEvent;
+			import com.mapquest.tilemap.controls.flex.ZoomControlComponent;
+			import com.mapquest.tilemap.controls.inputdevice.MouseWheelZoomControl;
+			
+			import flash.geom.Point;
+			
+			import fr.kapit.lab.demo.data.config.MapParams;
+			
+			import mx.events.FlexEvent;
+			
+			/* ******
+			* Getters/Setters
+			*********/
+			
+			private var _forceUpdate:Boolean;
+			public function get forceUpdate():Boolean
+			{
+				return _forceUpdate;
+			}
+			public function set forceUpdate(value:Boolean):void
+			{
+				_forceUpdate = value;
+			}			
+			
+			protected var _mapVisualizer:MapVisualizer;
+			public function get mapVisualizer():MapVisualizer
+			{
+				return _mapVisualizer;
+			}
+			public function set mapVisualizer(value:MapVisualizer):void
+			{
+				_mapVisualizer = value;
+				if(_mapVisualizer)
+					syncWithMapVisualizer();
+			}
+			
+			private var _mapParams:MapParams;
+			private var _mapConfigChanged:Boolean;
+			private var topLeftLatLng:LatLng;
+			private var bottomRightLatLng:LatLng;
+			public function get mapParams():MapParams
+			{
+				return _mapParams;
+			}
+			public function set mapParams(value:MapParams):void
+			{
+				_mapParams = value;
+				_mapConfigChanged = true;
+				topLeftLatLng = new LatLng();
+				topLeftLatLng.setLatLng(_mapParams.topLatitude, _mapParams.leftLongitude);
+				bottomRightLatLng = new LatLng();
+				bottomRightLatLng.setLatLng(_mapParams.bottomLatitude, _mapParams.rightLongitude);
+				invalidateProperties();
+			}
+
+			/* ******
+			* Init
+			*********/
+			
+			protected function syncWithMapVisualizer():void
+			{
+				addControl(new MouseWheelZoomControl());
+				addEventListener("zoomend",handleZoomEnd);
+				addEventListener("tilemapmove",handleMoveEnd);
+				addEventListener("moveend",handleMoveEnd);
+			}
+			protected function handleZoomEnd(event:TileMapEvent):void
+			{
+				mapVisualizer.zoomContent(event.zoom/event.prevZoom,null,true,false);
+				mapVisualizer.forceGraphUpdate = true;
+			}
+			
+			protected function handleMoveEnd(event:TileMapEvent):void
+			{
+				mapVisualizer.forceGraphUpdate = true;
+			}
+			
+			/* ******
+			* ICustomLayer Methods
+			*********/
+			
+			public function displace(deltaX:Number, deltaY:Number, withAnimation:Boolean=false, noEvent:Boolean=false):void
+			{
+				//Custom Layer controlling Pan on Visualizer. No need for Panning
+			}
+			public function scale(centerPoint:Point, ratio:Number, withAnimation:Boolean=false, noEvent:Boolean=false):void
+			{ 
+				//Custom Layer controlling Zoom on Visualizer. No need for scaling
+			}
+			
+			/* ******
+			* Overriden methods
+			*********/
+			
+			protected override function commitProperties():void
+			{
+				super.commitProperties();
+				if(_mapConfigChanged)
+				{
+					bestFitLL([topLeftLatLng, bottomRightLatLng]);
+					_mapConfigChanged = false;
+					invalidateDisplayList();
+					
+				}
+			}
+			protected override function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				if(_mapVisualizer)
+					_mapVisualizer.forceGraphUpdate = true;
+			}
+			
+			/* ******
+			* Lat/Long
+			*********/
+			
+			public function getPositionFromLatLong(latitude:Number, longitude:Number):Point
+			{
+				var latLong:LatLng = new LatLng();
+				latLong.setLatLng(latitude, longitude);
+				return llToPix(latLong);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</tilemap:TilemapComponent>

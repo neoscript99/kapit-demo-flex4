@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components1:TemplateDemoContainer xmlns:component="fr.kapit.lab.demo.panel.component.*"
+								   xmlns:components="fr.kapit.lab.demo.ui.components.*"
+								   xmlns:components1="fr.kapit.lab.demo.common.components.*"
+								   xmlns:diagrammer="fr.kapit.diagrammer.*"
+								   xmlns:fx="http://ns.adobe.com/mxml/2009"
+								   xmlns:info="fr.kapit.lab.demo.info.*"
+								   xmlns:layouts="fr.kapit.lab.demo.ui.components.layouts.*"
+								   xmlns:menubar="fr.kapit.lab.demo.ui.components.menubar.*"
+								   xmlns:mx="library://ns.adobe.com/flex/mx"
+								   xmlns:overview="fr.kapit.visualizer.tools.overview.*"
+								   xmlns:overview1="fr.kapit.lab.demo.ui.components.overview.*"
+								   xmlns:panel="fr.kapit.lab.demo.panel.*"
+								   xmlns:properties="fr.kapit.lab.demo.ui.components.properties.*"
+								   xmlns:s="library://ns.adobe.com/flex/spark"
+								   xmlns:visualizer="fr.kapit.visualizer.*"
+								   width="100%" height="100%"
+								   openOptions="true"
+								   showAboutInfo="this_showAboutInfoHandler(event)"
+								   title="BPM"
+								   creationComplete="mainView_creationCompleteHandler(event)"
+								   resize="this_resizeHandler()"
+								   >
+	<fx:Declarations>
+		<fx:XML id="initData" source="../../data/BPMN.xml" />
+	</fx:Declarations>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.actionscript.lang.ArrayUtil;
+		import fr.kapit.diagrammer.actions.GroupAction;
+		import fr.kapit.diagrammer.base.IDiagramGroup;
+		import fr.kapit.diagrammer.base.IDiagramSprite;
+		import fr.kapit.diagrammer.base.IModeled;
+		import fr.kapit.diagrammer.events.DiagrammerEvent;
+		import fr.kapit.diagrammer.renderers.DefaultEditorGroupRenderer;
+		import fr.kapit.diagrammer.renderers.DefaultEditorRenderer;
+		import fr.kapit.diagrammer.renderers.IEditable;
+		import fr.kapit.lab.demo.data.GrapheConstructor;
+		import fr.kapit.lab.demo.model.ApplicationModel;
+		import fr.kapit.lab.demo.popup.ErrorPopup;
+		import fr.kapit.lab.demo.popup.ErrorPopupWithOption;
+		import fr.kapit.lab.demo.ui.renderers.BMPRendererSkin;
+		import fr.kapit.lab.demo.ui.renderers.BPMRendererData;
+		import fr.kapit.lab.demo.ui.renderers.BPMRendererItem;
+		import fr.kapit.lab.demo.ui.renderers.CircleEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.DiagramItemRendererBase;
+		import fr.kapit.lab.demo.ui.renderers.DocumentEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.HexagonEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.LabelEditableItemRenderer;
+		import fr.kapit.lab.demo.ui.renderers.LosangeEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.OctagonEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.RectangleEditorRenderer;
+		import fr.kapit.lab.demo.ui.renderers.TrapezeEditorRenderer;
+		import fr.kapit.lab.demo.util.ArrowCursor;
+		import fr.kapit.layouts.algorithms.balloon.BalloonLayout;
+		import fr.kapit.layouts.algorithms.hierarchical.HierarchicalLayout;
+		import fr.kapit.layouts.algorithms.orthogonal.OrthogonalLayout;
+		import fr.kapit.layouts.algorithms.radial.RadialLayout;
+		import fr.kapit.layouts.algorithms.sugiyama.SugiyamaLayout;
+		import fr.kapit.layouts.constants.RootSelectionType;
+		import fr.kapit.visualizer.actions.DisplaceAction;
+		import fr.kapit.visualizer.actions.data.DisplaceActionData;
+		import fr.kapit.visualizer.base.IItem;
+		import fr.kapit.visualizer.base.ILink;
+		import fr.kapit.visualizer.base.ISprite;
+		import fr.kapit.visualizer.base.ITable;
+		import fr.kapit.visualizer.events.VisualizerEvent;
+
+		import mx.collections.ArrayCollection;
+		import mx.core.IFlexDisplayObject;
+		import mx.core.UIComponent;
+		import mx.events.DataGridEvent;
+		import mx.events.FlexEvent;
+		import mx.managers.PopUpManager;
+
+		/**
+		 * @private
+		 * Reference to the global application model.
+		 */
+		[Bindable]
+		private var _applicationModel:ApplicationModel = null;
+
+		/**
+		 * @private
+		 * Current ratio of the visualizer component.
+		 */
+		[Bindable]
+		private var _zoomRatio:Number = 1;
+
+		/**
+		 * @private
+		 * Instance of popup to display error on layouts
+		 */
+		private var _layoutErrorPopup:IFlexDisplayObject;
+
+		private var _rootSelectionPolicies:ArrayCollection = new ArrayCollection([
+			{label:"Most closed", value:RootSelectionType.MOST_CLOSED_ROOT_SELECTION},
+			{label:"Most surrounded", value:RootSelectionType.MOST_SURROUNDED_ROOT_SELECTION},
+			{label:"Most weighted", value:RootSelectionType.MOST_WEIGHTED_ROOT_SELECTION}
+		]);
+
+		/**
+		 * Invoked upon creation of the view.
+		 *
+		 * @param event
+		 */
+		protected function mainView_creationCompleteHandler(event:FlexEvent):void
+		{
+			appModel.diagrammer = diagrammer;
+
+			//diagrammer.nodeLabelFields = "label";
+			// force usage of DefaultGroupRenderer
+			diagrammer.groupLabelField = "label";
+
+			// hide expand / collapse buttons
+			diagrammer.setStyle("showNodeExpandCollapseButton", 0);
+			diagrammer.setStyle("showGroupExpandCollapseButton", 0);
+
+			// specify that we can change the scope of dragged element(s) directly (without a key pressed)
+			var displaceActionData:DisplaceActionData = new DisplaceActionData();
+			displaceActionData.changeScopeMode = DisplaceActionData.DEFAULT_MODE;
+			diagrammer.updateAction(DisplaceAction.ID, displaceActionData);
+			diagrammer.activateAction(GroupAction.ID);
+			appModel.diagrammerModel.layoutID = BalloonLayout.ID;
+			diagrammer.nodeRendererFunction = nodeRendererFunction;
+			diagrammer.groupRendererFunction = groupRendererFunction;
+
+			// invoke propertiesPanel.synchronize();
+			datavizComponent_selectionChangeHandler(null);
+			/*
+			* The event listener is added with a very low priority, so
+			* it may be triggered last
+			*/
+			diagrammer.addEventListener(
+				VisualizerEvent.ELEMENTS_SELECTION_CHANGED,
+				datavizComponent_selectionChangeHandler,
+				false, -10, true
+			);
+			appModel.diagrammerModel.layoutID = OrthogonalLayout.ID;
+			diagrammer.addEventListener(VisualizerEvent.DATA_LOADED, datavizComponent_dataLoadedHandler);
+
+			/*
+			* Used to synchronize the zoom ratio of the diagrammer component and the overview component
+			*/
+			diagrammer.addEventListener(VisualizerEvent.GRAPH_FITTED, graphZoomedHandler);
+			diagrammer.addEventListener(VisualizerEvent.GRAPH_ZOOMED, graphZoomedHandler);
+			diagrammer.validateNow();
+			initGraph();
+			//GrapheConstructor.construct(diagrammer);
+			checkScrollBarVisibility();
+		}
+
+		private function initGraph():void
+		{
+			initDataModel();
+			diagrammer.fromXML(initData);
+			var node:Object;
+			var nodes:Dictionary = diagrammer.nodesMap;
+			var id:String;
+			dataModelArray = new ArrayCollection();
+			for each (node in nodes)
+			{
+				id = node.itemID;
+				if (_initDataModelMap[id])
+				{
+					node.dataModel = {id:id,text:_initDataModelMap[id],type:node.data['renderer']};
+					dataModelMap[id] = node.dataModel;
+					dataModelArray.addItem(node.dataModel);
+					node.updateRenderers(true);
+				}
+			}
+		}
+
+		private var _initDataModelMap:Dictionary;
+
+		private function initDataModel():void
+		{
+			_initDataModelMap = new Dictionary();
+			_initDataModelMap['G0-node4'] = "Identify\rPayment\rMethod";
+			_initDataModelMap['G0-node5'] = "Authorized\rCredit Card";
+			_initDataModelMap['G0-node6'] = "Accept Cash\ror Check";
+			_initDataModelMap['G0-node7'] = "Process\rCredit Card";
+			_initDataModelMap['G0-node8'] = "Prepare\rPackage for\rCustomer";
+			_initDataModelMap['G0-node9'] = "Deliver\rPackage to\rCustomer";
+			_initDataModelMap['G0-node13'] = "Authorize\rPayment";
+		}
+
+		private function exportNodeFunction(data:Object):XML
+		{
+			var xml:XML;
+			if (data.hasOwnProperty("renderer"))
+			{
+				xml = new XML(<data/>);
+				xml.@renderer = data["renderer"].toString();
+				xml.@label = data["label"].toString();
+				xml.@description = data["description"].toString();
+			}
+			return (xml);
+		}
+
+		private function importNodeFunction(xml:XML):Object
+		{
+			var data:Object=new Object;
+			data["renderer"] = xml.@renderer.toString();
+			data["label"] = xml.@label.toString();
+			data["description"] = xml.@description.toString();
+			return data;
+		}
+
+		/**
+		 * @private
+		 * Updates the current ratio
+		 *
+		 * @param event
+		 */
+		protected function graphZoomedHandler(event:VisualizerEvent):void
+		{
+			_zoomRatio = diagrammer.ratio;
+		}
+
+		/**
+		 * @private
+		 * Handles the ELEMENTS_SELECTION_CHANGED event dispatched by
+		 * the data-visualization component, updates the properties panels
+		 * according to the current selection.
+		 *
+		 * @param event
+		 */
+		private function datavizComponent_selectionChangeHandler(event:VisualizerEvent):void
+		{
+			propertiesPanel.synchronize();
+			menubar.synchronize();
+		}
+
+		/**
+		 * @private
+		 * Handles the DATA_LOADED event dispatched by
+		 * the data-visualization component, fit the diagramm to the screen.
+		 *
+		 * @param event
+		 */
+		private function datavizComponent_dataLoadedHandler(event:VisualizerEvent):void
+		{
+			callLater(appModel.diagrammerModel.applyAutofit,[false]);
+		}
+
+		/**
+		 * Reference to the global application model.
+		 */
+		[Bindable]
+		public function get appModel():ApplicationModel
+		{
+			return _applicationModel;
+		}
+
+		/** @private */
+		public function set appModel(objValue:ApplicationModel):void
+		{
+			if (null != appModel)
+			{
+				appModel.diagrammer = null;
+			}
+			_applicationModel = objValue;
+			if ((null != appModel) && (null != diagrammer))
+			{
+				appModel.diagrammer = diagrammer;
+			}
+		}
+
+		/**
+		 * Function used to return custom visual content (MXML component, Video, Image..) for each node given its data.
+		 * The function takes as input the node data and according to it returns a custom <code>DisplayObject</code> instance.
+		 * It is called at rendering time for each node or when setting this property.
+		 *
+		 * @param data Object to set to the node
+		 */
+		protected function nodeRendererFunction(data:Object):Object
+		{
+			var type:String = data["renderer"] ? data["renderer"] : null;
+			var item:*;
+			switch (type)
+			{
+				case "circle":
+				{
+					item = new CircleEditorRenderer();
+					break;
+				}
+				case "document":
+				{
+					item = new DocumentEditorRenderer();
+					break;
+				}
+				case "rectangle":
+				{
+					item = new RectangleEditorRenderer();
+					break;
+				}
+				case "losange":
+				{
+					item = new LosangeEditorRenderer();
+					break;
+				}
+				case "hexagon":
+				{
+					item = new HexagonEditorRenderer();
+					break;
+				}
+				case "octagon":
+				{
+					item = new OctagonEditorRenderer();
+					break;
+				}
+				case "trapeze":
+				{
+					item = new TrapezeEditorRenderer();
+					break;
+				}
+				case "losange_0":
+				case "losange_1":
+				case "losange_2":
+				case "losange_3":
+				case "losange_4":
+				case "losange_5":
+				case "circle_0":
+				case "circle_1":
+				case "circle_2":
+				case "circle_3":
+				case "circle_4":
+				case "circle_5":
+				{
+					item = new BPMRendererItem();
+					var renderer_data:BPMRendererData = new BPMRendererData();
+					renderer_data.iconref = type;
+					item.data = renderer_data;
+					break;
+				}
+				default:
+				{
+					item = new DefaultEditorRenderer();
+					break;
+				}
+			}
+			if (!(item is BPMRendererItem))
+			{
+				item.data = data;
+
+				if (item.data.size)
+				{
+					item.width = item.data.size;
+					item.height = item.data.size;
+				}
+				createNodeContextMenu(item);
+			}
+			return item;
+		}
+
+		protected function groupRendererFunction(data:Object):DefaultEditorGroupRenderer
+		{
+			var group:DefaultEditorGroupRenderer = new DefaultEditorGroupRenderer();
+			createGroupContextMenu(group);
+			return group;
+		}
+
+		protected function createNodeContextMenu(node:DefaultEditorRenderer):void
+		{
+			var renameItem:ContextMenuItem = new ContextMenuItem("Rename", true);
+			renameItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function rename():void{
+				diagrammer.unselectAll();
+				node.item.isSelected = true;
+				diagrammer.dispatchVisualizerEvent(VisualizerEvent.ELEMENTS_SELECTION_CHANGED, [node.item]);
+				node.dispatchEvent(new MouseEvent(MouseEvent.DOUBLE_CLICK));
+			});
+			var itemContextMenu:ContextMenu = new ContextMenu();
+			itemContextMenu.hideBuiltInItems();
+			itemContextMenu.customItems.push(renameItem);
+			node.contextMenu = itemContextMenu;
+		}
+
+		protected function createGroupContextMenu(group:DefaultEditorGroupRenderer):void
+		{
+			var renameItem:ContextMenuItem = new ContextMenuItem("Rename", true);
+			renameItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function rename():void{
+				diagrammer.unselectAll();
+				group.item.isSelected = true;
+				diagrammer.dispatchVisualizerEvent(VisualizerEvent.ELEMENTS_SELECTION_CHANGED, [group.item]);
+				group.dispatchEvent(new MouseEvent(MouseEvent.DOUBLE_CLICK));
+			});
+			var itemContextMenu:ContextMenu = new ContextMenu();
+			itemContextMenu.hideBuiltInItems();
+			itemContextMenu.customItems.push(renameItem);
+			group.contextMenu = itemContextMenu;
+		}
+
+		protected function diagrammer_doubleClickHandler(event:MouseEvent):void
+		{
+			if (event.target is ILink)
+			{
+				var link:ILink = ILink(event.target);
+				link.data['label'] = 'Description';
+				link.updateDecorators(true);
+			}
+		}
+
+
+		[Bindable]
+		private var dataModelArray:ArrayCollection=new ArrayCollection();
+
+		private var dataModelMap:Dictionary = new Dictionary();
+
+		protected function diagrammer_elementsCreatedHandler(event:VisualizerEvent):void
+		{
+			var items:Array = event.items;
+			var l:uint = items.length;
+
+			if (l==0)
+			{
+				return;
+			}
+			var i:uint;
+			var id:String;
+			var item:IDiagramSprite;
+			var model:Object;
+			var type:String;
+			for (i=0; i<l; ++i)
+			{
+				if (!(items[i] is IDiagramSprite))
+				{
+					continue;
+				}
+				item =event.items[i] as IDiagramSprite;
+				id=item.itemID;
+				type = item.data['renderer'].toString();
+				if (type.search('circle_')!=-1 || type.search('losange_')!=-1)
+				{
+					continue;
+				}
+				if (dataModelMap[id])
+				{
+					model = dataModelMap[id];
+				}
+				else
+				{
+					model = {text:'Text', type:type,id:id};
+				}
+				if (!item.dataModel)
+				{
+					item.dataModel = model;
+				}
+				else
+				{
+					model = item.dataModel;
+				}
+				item.dataModelID = id;
+				item.updateRenderers(true);
+				dataModelMap[id] = model;
+				dataModelArray.addItem(model);
+			}
+
+		}
+
+
+		protected function diagrammer_elementsDeletedHandler(event:VisualizerEvent):void
+		{
+			var elements:Array = event.items;
+			var n:uint = elements.length;
+			var i:uint;
+			var node:IModeled;
+			var element:IItem;
+			var model:Object;
+			var found:Boolean;
+			for (i=0; i<n; ++i)
+			{
+				element = elements[i];
+				if (element is IDiagramSprite || element is IDiagramGroup)
+				{
+					node = element as IModeled;
+					found=false;
+					for each (model in dataModelArray)
+					{
+						if (model['id']==element.itemID)
+						{
+							dataModelArray.removeItemAt(dataModelArray.getItemIndex(model));
+							found=true;
+						}
+						if (found)
+						{
+							break;
+						}
+					}
+				}
+			}
+		}
+
+
+
+
+
+
+		protected function diagrammer_rollOverHandler(event:MouseEvent):void
+		{
+			if (menubar.cursorAction)
+			{
+				ArrowCursor.icon = menubar.cursorAction;
+				ArrowCursor.zoomActivated = menubar.zoomStateActivated;
+				cursorManager.setCursor(ArrowCursor);
+			}
+		}
+
+		protected function diagrammer_rollOutHandler(event:MouseEvent):void
+		{
+			cursorManager.removeAllCursors();
+		}
+
+		protected function this_resizeHandler():void
+		{
+			callLater(checkScrollBarVisibility);
+		}
+
+		private function checkScrollBarVisibility():void
+		{
+		/* if (scroller.verticalScrollBar.visible)
+		{
+			scroller.width = 169;
+			AboutPanel.right = 169;
+		}
+		else
+		{
+			scroller.width = 160;
+			AboutPanel.right = 160;
+		} */
+		}
+
+		protected function this_showAboutInfoHandler(event:Event):void
+		{
+			aboutPanel.open = true;
+		}
+	]]>
+	</fx:Script>
+
+	<components1:optionsContent>
+		<overview1:OverviewPanel appModel="{appModel}" ratio="{_zoomRatio}" />
+
+		<properties:PropertiesPanel id="propertiesPanel" appModel="{appModel}" />
+	</components1:optionsContent>
+
+	<diagrammer:Diagrammer id="diagrammer"
+						   width="100%" height="100%"
+						   doubleClickEnabled="true" minHeight="600" minWidth="800"
+						   elementsCreated="diagrammer_elementsCreatedHandler(event)"
+						   elementsDeleted="diagrammer_elementsDeletedHandler(event)"
+						   layoutID="{OrthogonalLayout.ID}"
+						   linkDecoratorLabelFields="label" minZoomRatio="0.1"
+						   nodeDecoratorLabelFields="description" nodeLabelFields="text"
+						   skipGroupBoundsUpdate="true"
+						   doubleClick="diagrammer_doubleClickHandler(event)"
+						   rollOver="diagrammer_rollOverHandler(event)"
+						   rollOut="diagrammer_rollOutHandler(event)"
+						   />
+
+	<menubar:MenuBar id="menubar"
+					 width="100%" height="40"
+					 model="{_applicationModel.diagrammerModel}"
+					 />
+
+	<fx:Declarations>
+		<components1:AboutPanel id="aboutPanel"
+								parentPopUp="{this}" title="About Kalileo BPM Demo"
+								>
+			<components1:description>
+				<![CDATA[
+				<br/>This demo is a simple BPM application using Kalileo’s Diagrammer component. It focuses on the following features implementation:<br />
+				<br/><li><b> Tables management:</b> Tables are a great option for managing lanes, panels, columns and even both. Try using the add/remove buttons to lay out your BPM process.</li>
+				<li><b> Nodes rendering:</b> By choosing a shape from the menu bar and clicking on the screen,  you can create nodes with different renderings.</li>
+				<li><b> Overview:</b> This tool can be bound to the Diagrammer to get an overview of all the nodes, groups and links of the displayed graph. Particularly useful with huge graphs, it allows to zoom in, out, and pan very easily.</li>
+				]]>
+			</components1:description>
+		</components1:AboutPanel>
+	</fx:Declarations>
+</components1:TemplateDemoContainer>

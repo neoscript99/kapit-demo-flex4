@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<visualizer:Visualizer xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:visualizer="fr.kapit.visualizer.*"
+					   layout="balloon"
+					   groupLabelField="uid" linkIDField="uid"
+					   linkSourceField="sourceNode" linkTargetField="targetNode"
+					   nodeIDField="uid" nodeLabelFields="uid"
+					   nodeRendererClass="{GraphAirportRenderer}"
+					   nodeTooltipBackgroundColors="{[0x49494B,0x1F1C20]}"
+					   nodeTooltipBorderColor="0x211E22"
+					   nodeTooltipFields="label;country;nationalFlights;internationalFlights"
+					   nodeTooltipFontSize="11" nodeTooltipTailHeight="12"
+					   nodeTooltipTailWidth="8"
+					   nodeTooltipTitles="Name;Country;National;International"
+					   showGroupExpandCollapseButton="false"
+					   creationComplete="visualizer_creationCompleteHandler(event)"
+					   >
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.renderer.graph.GraphAirportRenderer;
+		import fr.kapit.layouts.constants.EdgeDrawType;
+		import fr.kapit.layouts.constants.OrientationType;
+		import fr.kapit.layouts.constants.RootSelectionType;
+
+		import mx.events.FlexEvent;
+
+		protected function visualizer_creationCompleteHandler(event:FlexEvent):void
+		{
+			balloonLayout.rootSelectionPolicy = radialLayout.rootSelectionPolicy = RootSelectionType.MOST_CLOSED_ROOT_SELECTION;
+			hierarchicalCyclicLayout.edgeDrawing = EdgeDrawType.ORTHOGONAL_STRAIGHT_POLYLINE;
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</visualizer:Visualizer>

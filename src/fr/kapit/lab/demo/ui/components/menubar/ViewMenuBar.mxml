@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:buttons="fr.kapit.lab.demo.buttons.*"
+		 xmlns:components="fr.kapit.lab.demo.menubar.components.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 >
+
+	<fx:Metadata>
+		[Event(name="change", type="spark.events.IndexChangeEvent")]
+	</fx:Metadata>
+	<fx:Script>
+	<![CDATA[
+		import fr.kapit.lab.demo.ui.views.MainView;
+		import fr.kapit.layouts.algorithms.sugiyama.SugiyamaLayout;
+		import fr.kapit.visualizer.Visualizer;
+
+		import spark.events.IndexChangeEvent;
+
+
+		protected function viewsBtnBar_changeHandler(event:IndexChangeEvent):void
+		{
+			dispatchEvent(event);
+		}
+	]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:ArrayCollection id="viewsDataProvider">
+			<fx:String>Map View</fx:String>
+			<fx:String>Graph View</fx:String>
+		</s:ArrayCollection>
+	</fx:Declarations>
+
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0xB3B3B3" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xF2F2F2" />
+		</s:fill>
+	</s:Rect>
+
+	<s:HGroup width="100%" height="100%"
+			  left="10"
+			  horizontalAlign="center" verticalAlign="middle"
+			  gap="10"
+			  >
+		<s:ButtonBar id="viewsBtnBar"
+					 dataProvider="{viewsDataProvider}" selectedIndex="0"
+					 requireSelection="true"
+					 change="viewsBtnBar_changeHandler(event)"
+					 />
+	</s:HGroup>
+</s:Group>
